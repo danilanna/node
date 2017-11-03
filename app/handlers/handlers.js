@@ -13,12 +13,12 @@ export const errorHandler = (err, req, res, next) => {
 			return;
 		}
 
-      	const {newToken, newRefreshToken, user} = refreshTokens(token, refreshToken);
+      	const {createToken, createRefreshToken, user} = refreshTokens(token, refreshToken);
 
-      	if (newToken && newRefreshToken) {
+      	if (createToken && createRefreshToken) {
         	res.set('Access-Control-Expose-Headers', 'x-token, x-refresh-token');
-        	res.set('x-token', newToken);
-        	res.set('x-refresh-token', newRefreshToken);
+        	res.set('x-token', createToken);
+        	res.set('x-refresh-token', createRefreshToken);
         	req.user = user;
         	next();
       	} else {
@@ -29,6 +29,20 @@ export const errorHandler = (err, req, res, next) => {
     	res.status(401).send('invalid token...');
 		return;
     }
+};
+
+export const validateRequestHandler = (req, res, next) => {
+
+	if ((req.method === 'POST' || req.method === 'PUT') && Object.keys(req.body).length === 0) {
+
+        res.status(404).json({
+          success: false,
+          message: 'Invalid content'
+        });
+        return;
+	}
+
+	next();
 };
 
 const getToken = (req) => {

@@ -1,28 +1,24 @@
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
-import dotenv from 'dotenv';
+import {getConfigurations} from '../../config/config';
+import {findOne} from './userController';
 
-dotenv.config();
+const config = getConfigurations(process.env.ENVIRONMENT);
 
-const SECRET = process.env.SECRET;
-const SECRET_2 = process.env.SECRET_2;
+const SECRET = config.session.secret;
+const SECRET_2 = config.session.secret_2;
+const tokenExpirationTime = config.session.tokenExpirationTime;
 
-export const check = (req, res) => {
-	res.json({
-		success: true,
-		message: 'Enjoy your token!'
-	});
-};
+export const login = async (param) => {
+	
+	const user = await findOne(param);
 
-export const login = (req, res) => {
-	const { token, refreshToken } = authenticate(req.body, SECRET, SECRET_2);
+	if(!user) {
+		return {};
+	}
 
-	res.json({
-		success: true,
-		message: 'Enjoy your token!',
-		token: token,
-		refreshToken: refreshToken
-	});
+	return createTokens(user, SECRET, SECRET_2 + user._id);
+
 };
 
 export const refreshTokens = (token, refreshToken) => {
@@ -32,49 +28,40 @@ export const refreshTokens = (token, refreshToken) => {
   		return {};
   	}
 
-	const [newToken, newRefreshToken] = createTokens(user, SECRET, refreshSecret);
+	const {createToken, createRefreshToken} = createTokens(user, SECRET, refreshSecret);
 
-	return {newToken, newRefreshToken, user};
-};
-
-const authenticate = (user, SECRET, SECRET_2) => {
-
-  	//TODO call database.
-  
-  	const [token, refreshToken] = createTokens(user, SECRET, SECRET_2 + user.id);
-
-  	return {token, refreshToken};
+	return {createToken, createRefreshToken, user};
 };
 
 const createTokens = (user, secret, secret2) => {
 
-  	const createToken = jwt.sign({ user: _.pick(user, ['id', 'isAdmin'])}, secret, { expiresIn: process.env.ENVIRONMENT === 'test' ? '5s' : '1m'});
+  	const createToken = jwt.sign({ user: _.pick(user, ['_id', 'isAdmin'])}, secret, { expiresIn: tokenExpirationTime});
 
-  	const createRefreshToken = jwt.sign({ user: _.pick(user, 'id')}, secret2, {  expiresIn: '7d'});
+  	const createRefreshToken = jwt.sign({ user: _.pick(user, '_id')}, secret2, { expiresIn: '7d'});
 
-  	return [createToken, createRefreshToken];
+  	return {createToken, createRefreshToken};
 };
 
 const verifyTokens = (token, refreshToken) => {
 
 	let userIdRefreshToken, userIdToken;
 
-  	let { user: { id } } = jwt.decode(refreshToken);
-   	userIdRefreshToken = id;
+  	let { user: { _id } } = jwt.decode(refreshToken);
+   	userIdRefreshToken = _id;
 
 	if (!userIdRefreshToken) {
 		return {};
 	}
 
-	const user = { id: userIdRefreshToken };
+	const user = { _id: userIdRefreshToken };
 
-	const refreshSecret = SECRET_2 + user.id;
+	const refreshSecret = SECRET_2 + user._id;
 
 	try {
 
 		jwt.verify(refreshToken, refreshSecret);
-		let { user: { id } } = jwt.decode(token, SECRET);
-		userIdToken = id;
+		let { user: { _id } } = jwt.decode(token, SECRET);
+		userIdToken = _id;
 
 		//In case the user is using the refresh token from other user
 		if(!userIdRefreshToken || !userIdToken || (userIdRefreshToken !== userIdToken)) {

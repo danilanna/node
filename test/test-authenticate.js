@@ -1,39 +1,44 @@
-//During the test the env variable is set to test
-process.env.ENVIRONMENT = 'test';
-
-//Require the dev-dependencies
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import jwt from 'jsonwebtoken';
 import server from '../app';
+import User from '../app/models/user';
+import {getConfigurations} from '../config/config';
 
 let token, refreshToken;
 
 const should = chai.should();
-const SECRET = process.env.SECRET;
-const SECRET_2 = process.env.SECRET_2;
+const config = getConfigurations(process.env.ENVIRONMENT);
+const SECRET = config.session.secret;
+const SECRET_2 = config.session.secret_2;
+
+const user = {
+    name: "Jhon",
+    password: "password"
+};
 
 chai.use(chaiHttp);
 
-/*
-* Test the /POST authenticate route
-*/
 describe('Authentication', () => {
-    before((done) => { //Before test we get a new token
+    before((done) => {
 
-    let user = {
-        id: "1",
-        name: "Daniel"
-    };
+        const obj = new User(user);
 
-    chai.request(server)
-      .post('/api/authenticate')
-      .send(user)
+        obj.save();
+		
+        done();
+  	});
+
+    it('it should authenticate user', (done) => {
+
+        chai.request(server)
+        .post('/api/authenticate')
+        .send(user)
 
         .end((err, res) => {
 
-          token = res.body.token;
-          refreshToken = res.body.refreshToken;
+            token = res.body.token;
+            refreshToken = res.body.refreshToken;
 
             res.should.have.status(200);
             res.body.should.be.a('object');
@@ -43,9 +48,30 @@ describe('Authentication', () => {
         });
     });
 
-    /*
-    * Test the /GET user route
-    */
+    it('it should fail authenticate invalid user', (done) => {
+
+        chai.request(server)
+        .post('/api/authenticate')
+        .send({name: 'Jhon', password: 'Snow'})
+
+        .end((err, res) => {
+            res.should.have.status(404);
+            done();
+        });
+    });
+
+    it('it should fail authenticate empty body', (done) => {
+
+        chai.request(server)
+        .post('/api/authenticate')
+        .send({})
+
+        .end((err, res) => {
+			res.should.have.status(404);
+            done();
+        });
+    });
+
     it('it should fail without token', (done) => {
         chai.request(server)
         .get('/api/authenticate')
@@ -58,162 +84,162 @@ describe('Authentication', () => {
 
     it('it should refresh expired token', (done) => {
 
-      let expire = () => {
-          chai.request(server)
-          .get('/api/authenticate')
-          .set({ "authorization":"Bearer " + token })
-          .set({ "x-refresh-token": refreshToken })
+      	let expire = () => {
+			chai.request(server)
+			.get('/api/authenticate')
+			.set({ "authorization":"Bearer " + token })
+			.set({ "x-refresh-token": refreshToken })
 
-          .end((err, res) => {
-              res.should.have.status(200);
-              res.body.should.be.a('object');
-              done();
-          });
+          	.end((err, res) => {
+              	res.should.have.status(200);
+              	res.body.should.be.a('object');
+              	done();
+          	});
         };
-        setTimeout(expire, 5001);
+        setTimeout(expire, 2001);
     });
 
     it('it should fail without sending refresh token', (done) => {
 
-      let expire = () => {
-          chai.request(server)
-          .get('/api/authenticate')
-          .set({ "authorization":"Bearer " + token })
+      	let expire = () => {
+			chai.request(server)
+			.get('/api/authenticate')
+			.set({ "authorization":"Bearer " + token })
 
-          .end((err, res) => {
-              res.should.have.status(401);
-              done();
+          	.end((err, res) => {
+              	res.should.have.status(401);
+              	done();
           });
         };
-        setTimeout(expire, 5001);
+        setTimeout(expire, 2001);
     });
 
     it('it should fail without sending token', (done) => {
 
-      let expire = () => {
-          chai.request(server)
-          .get('/api/authenticate')
-          .set({ "x-refresh-token": refreshToken })
+      	let expire = () => {
+          	chai.request(server)
+          	.get('/api/authenticate')
+          	.set({ "x-refresh-token": refreshToken })
 
-          .end((err, res) => {
-              res.should.have.status(401);
-              done();
+          	.end((err, res) => {
+              	res.should.have.status(401);
+              	done();
           });
         };
-        setTimeout(expire, 5001);
+        setTimeout(expire, 2001);
     });
 
     it('it should fail using different userId token', (done) => {
 
-      const firstUser = jwt.sign({ user: {id: 1, name: 'dani'}}, SECRET, { expiresIn: '2s'});
-      const secondUser = jwt.sign({ user: {id: 2, name: 'daniel'}}, SECRET_2+'2', { expiresIn: '1m'});
+      	const firstUser = jwt.sign({ user: {_id: 1, name: 'Varys'}}, SECRET, { expiresIn: '2s'});
+     	const secondUser = jwt.sign({ user: {_id: 2, name: 'Jhon'}}, SECRET_2+'2', { expiresIn: '1m'});
 
-    let expire = () => {
-          chai.request(server)
-          .get('/api/authenticate')
-          .set({ "authorization":"Bearer " + firstUser })
-          .set({ "x-refresh-token": secondUser })
+    	let expire = () => {
+         	chai.request(server)
+          	.get('/api/authenticate')
+          	.set({ "authorization":"Bearer " + firstUser })
+          	.set({ "x-refresh-token": secondUser })
 
-          .end((err, res) => {
-              res.should.have.status(401);
-              done();
+          	.end((err, res) => {
+              	res.should.have.status(401);
+              	done();
           });
         };
-        setTimeout(expire, 5001);
+        setTimeout(expire, 2001);
     });
 
     it('it should fail without userId in token', (done) => {
 
-      const firstUser = jwt.sign({ user: { name: 'dani'}}, SECRET, { expiresIn: '2s'});
-      const secondUser = jwt.sign({ user: { name: 'daniel'}}, SECRET_2, { expiresIn: '1m'});
+      	const firstUser = jwt.sign({ user: { name: 'Varys'}}, SECRET, { expiresIn: '2s'});
+      	const secondUser = jwt.sign({ user: { name: 'Jhon'}}, SECRET_2, { expiresIn: '1m'});
 
-    let expire = () => {
-          chai.request(server)
-          .get('/api/authenticate')
-          .set({ "authorization":"Bearer " + firstUser })
-          .set({ "x-refresh-token": secondUser })
+    	let expire = () => {
+          	chai.request(server)
+			.get('/api/authenticate')
+			.set({ "authorization":"Bearer " + firstUser })
+			.set({ "x-refresh-token": secondUser })
 
-          .end((err, res) => {
-              res.should.have.status(401);
-              done();
+          	.end((err, res) => {
+              	res.should.have.status(401);
+              	done();
           });
         };
-        setTimeout(expire, 5001);
+        setTimeout(expire, 2001);
     });
 
     it('it should fail with invalid refresh token', (done) => {
 
-      const firstUser = jwt.sign({ user: { name: 'dani'}}, SECRET, { expiresIn: '2s'});
-      const secondUser = jwt.sign({ user: { name: 'daniel'}}, SECRET, { expiresIn: '1m'}).replace('a', 'b');
+      	const firstUser = jwt.sign({ user: { name: 'Varys'}}, SECRET, { expiresIn: '2s'});
+      	const secondUser = jwt.sign({ user: { name: 'Jhon'}}, SECRET, { expiresIn: '1m'}).replace('a', 'b');
 
-    let expire = () => {
-          chai.request(server)
-          .get('/api/authenticate')
-          .set({ "authorization":"Bearer " + firstUser })
-          .set({ "x-refresh-token": secondUser })
+    	let expire = () => {
+			chai.request(server)
+			.get('/api/authenticate')
+			.set({ "authorization":"Bearer " + firstUser })
+			.set({ "x-refresh-token": secondUser })
 
-          .end((err, res) => {
-              res.should.have.status(401);
-              done();
+          	.end((err, res) => {
+              	res.should.have.status(401);
+              	done();
           });
         };
-        setTimeout(expire, 5001);
+        setTimeout(expire, 2001);
     });
 
     it('it should fail with invalid token', (done) => {
 
-      const firstUser = jwt.sign({ user: { name: 'dani'}}, SECRET, { expiresIn: '2s'}).replace('a', 'b');
-      const secondUser = jwt.sign({ user: { name: 'daniel'}}, SECRET, { expiresIn: '1m'});
+      	const firstUser = jwt.sign({ user: { name: 'Varys'}}, SECRET, { expiresIn: '2s'}).replace('a', 'b');
+      	const secondUser = jwt.sign({ user: { name: 'Jhon'}}, SECRET, { expiresIn: '1m'});
 
-    let expire = () => {
-          chai.request(server)
-          .get('/api/authenticate')
-          .set({ "authorization":"Bearer " + firstUser })
-          .set({ "x-refresh-token": secondUser })
+    	let expire = () => {
+			chai.request(server)
+			.get('/api/authenticate')
+			.set({ "authorization":"Bearer " + firstUser })
+			.set({ "x-refresh-token": secondUser })
 
-          .end((err, res) => {
-              res.should.have.status(401);
-              done();
+			.end((err, res) => {
+              	res.should.have.status(401);
+              	done();
           });
         };
-        setTimeout(expire, 5001);
+        setTimeout(expire, 2001);
     });
 
     it('it should fail with invalid refresh token signature', (done) => {
 
-      const firstUser = jwt.sign({ user: { id: 1, name: 'dani'}}, SECRET, { expiresIn: '2s'});
-      const secondUser = jwt.sign({ user: { id: 2, name: 'daniel'}}, 'test', { expiresIn: '1m'});
+      	const firstUser = jwt.sign({ user: { _id: 1, name: 'Varys'}}, SECRET, { expiresIn: '2s'});
+      	const secondUser = jwt.sign({ user: { _id: 2, name: 'Jhon'}}, 'test', { expiresIn: '1m'});
 
-    let expire = () => {
-          chai.request(server)
-          .get('/api/authenticate')
-          .set({ "authorization":"Bearer " + firstUser })
-          .set({ "x-refresh-token": secondUser })
+    	let expire = () => {
+			chai.request(server)
+			.get('/api/authenticate')
+			.set({ "authorization":"Bearer " + firstUser })
+			.set({ "x-refresh-token": secondUser })
 
-          .end((err, res) => {
-              res.should.have.status(401);
-              done();
+			.end((err, res) => {
+              	res.should.have.status(401);
+              	done();
           });
         };
-        setTimeout(expire, 5001);
+        setTimeout(expire, 2001);
     });
 
     it('it should fail with invalid token signature', (done) => {
 
-      const firstUser = jwt.sign({ user: { id: 1, name: 'dani'}}, 'test', { expiresIn: '2s'});
-      const secondUser = jwt.sign({ user: { id: 2, name: 'daniel'}}, SECRET_2, { expiresIn: '1m'});
+      	const firstUser = jwt.sign({ user: { _id: 1, name: 'Varys'}}, 'test', { expiresIn: '2s'});
+      	const secondUser = jwt.sign({ user: { _id: 2, name: 'Jhon'}}, SECRET_2, { expiresIn: '1m'});
 
-    let expire = () => {
-          chai.request(server)
-          .get('/api/authenticate')
-          .set({ "authorization":"Bearer " + firstUser })
-          .set({ "x-refresh-token": secondUser })
+		let expire = () => {
+			chai.request(server)
+			.get('/api/authenticate')
+			.set({ "authorization":"Bearer " + firstUser })
+			.set({ "x-refresh-token": secondUser })
 
-          .end((err, res) => {
-              res.should.have.status(401);
-              done();
+			.end((err, res) => {
+              	res.should.have.status(401);
+              	done();
           });
         };
-        setTimeout(expire, 5001);
+        setTimeout(expire, 2001);
     });
 });
