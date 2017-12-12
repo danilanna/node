@@ -45,6 +45,13 @@ export const validateRequestHandler = (req, res, next) => {
 	next();
 };
 
+export const unauthorizedAccessHandler = (err, req, res, next) => {
+  console.log(err);
+  if (err.code === 'permission_denied') {
+    res.status(401).send('insufficient permissions');
+  }
+};
+
 const getToken = (req) => {
     return req.headers.authorization.split(' ')[1];
 };

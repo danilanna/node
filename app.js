@@ -19,7 +19,7 @@ import user from './app/routes/userRoutes';
 // =================================================================
 // =========================== HANDLERS ============================
 // =================================================================
-import {errorHandler, validateRequestHandler} from './app/handlers/handlers';
+import {errorHandler, validateRequestHandler, unauthorizedAccessHandler} from './app/handlers/handlers';
 
 // =================================================================
 // ===================== SERVER CONFIGURATION ======================
@@ -48,6 +48,7 @@ app.use(morgan('dev'));
 // error handler
 app.use(errorHandler);
 app.use(validateRequestHandler);
+app.use(unauthorizedAccessHandler);
 
 // =================================================================
 // ============================ ROUTES =============================

@@ -8,6 +8,7 @@ const config = getConfigurations(process.env.ENVIRONMENT);
 const SECRET = config.session.secret;
 const SECRET_2 = config.session.secret_2;
 const tokenExpirationTime = config.session.tokenExpirationTime;
+const refreshTokenExpirationTime = config.session.refreshTokenExpirationTime;
 
 export const login = async (param) => {
 	
@@ -35,9 +36,9 @@ export const refreshTokens = (token, refreshToken) => {
 
 const createTokens = (user, secret, secret2) => {
 
-  	const createToken = jwt.sign({ user: _.pick(user, ['_id', 'isAdmin'])}, secret, { expiresIn: tokenExpirationTime});
+  	const createToken = jwt.sign({ user: _.pick(user, ['_id', 'isAdmin', 'admin', 'permissions'])}, secret, { expiresIn: tokenExpirationTime});
 
-  	const createRefreshToken = jwt.sign({ user: _.pick(user, '_id')}, secret2, { expiresIn: '7d'});
+  	const createRefreshToken = jwt.sign({ user: _.pick(user, '_id', 'isAdmin', 'admin', 'permissions')}, secret2, { expiresIn: refreshTokenExpirationTime});
 
   	return {createToken, createRefreshToken};
 };
