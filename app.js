@@ -15,11 +15,19 @@ import {getConfigurations} from './config/config';
 // =================================================================
 import authenticate from './app/routes/authenticateRoutes';
 import user from './app/routes/userRoutes';
+import permission from './app/routes/permissionRoutes';
+import service from './app/routes/serviceRoutes';
+
+// =================================================================
+// ========================== CONTROLLERS ==========================
+// =================================================================
+import * as cacheController from './app/controllers/cacheController';
 
 // =================================================================
 // =========================== HANDLERS ============================
 // =================================================================
-import {errorHandler, validateRequestHandler, unauthorizedAccessHandler} from './app/handlers/handlers';
+import {errorHandler, unauthorizedAccessHandler} from './app/handlers/handlers';
+import {validateRequest} from './app/middlewares/middlewares';
 
 // =================================================================
 // ===================== SERVER CONFIGURATION ======================
@@ -47,14 +55,20 @@ app.use(morgan('dev'));
 
 // error handler
 app.use(errorHandler);
-app.use(validateRequestHandler);
 app.use(unauthorizedAccessHandler);
+app.use(validateRequest);
+
+cacheController.setInitialCache().then(() => {
+	console.log('cache loaded');
+});
 
 // =================================================================
 // ============================ ROUTES =============================
 // =================================================================
 app.use(authenticate);
 app.use(user);
+app.use(permission);
+app.use(service);
 
 // =================================================================
 // ======================= START THE SERVER ========================

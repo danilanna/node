@@ -1,16 +1,16 @@
 import express from 'express';
-import {find, create, findById, update, remove} from '../controllers/userController';
+import {find, create, findById, update, remove} from '../controllers/serviceController';
 import {checkPermission} from '../middlewares/middlewares';
 
 let routes = express.Router();
 
-routes.get('/api/users', checkPermission, async (req, res) => {
+routes.get('/api/services', checkPermission, async (req, res) => {
 
 try {
 
-    const users = await find(req.query);
+    const services = await find(req.query);
 
-    res.json(users);
+    res.json(services);
     
   } catch(err) {
     res.status(500).json({ success: false });
@@ -18,13 +18,13 @@ try {
 
 });
 
-routes.post('/api/users', checkPermission, async (req, res) => {
+routes.post('/api/services', checkPermission, async (req, res) => {
 
 	try {
 
-    	const user = await create(req.body);
+    	const service = await create(req.body);
 
-    	res.json({ success: true, user: user });
+    	res.json({ success: true, service: service });
 	    
   	} catch(err) {
     	res.status(500).json({ success: false });
@@ -32,13 +32,13 @@ routes.post('/api/users', checkPermission, async (req, res) => {
 
 });
 
-routes.get('/api/users/:id', checkPermission, async (req, res) => {
+routes.get('/api/services/:id', checkPermission, async (req, res) => {
 
 	try {
 
-    	const users = await findById(req.params.id);
+    	const services = await findById(req.params.id);
 
-    	res.json(users);
+    	res.json(services);
 	    
   	} catch(err) {
     	res.status(500).json({ success: false });
@@ -46,7 +46,7 @@ routes.get('/api/users/:id', checkPermission, async (req, res) => {
 
 });
 
-routes.put('/api/users/:id', checkPermission, async (req, res) => {
+routes.put('/api/services/:id', checkPermission, async (req, res) => {
 
 	try {
 
@@ -60,7 +60,7 @@ routes.put('/api/users/:id', checkPermission, async (req, res) => {
 
 });
 
-routes.delete('/api/users/:id', checkPermission, async (req, res) => {
+routes.delete('/api/services/:id', checkPermission, async (req, res) => {
 
 	try {
 

@@ -1,24 +1,24 @@
 import express from 'express';
-import {find, create, findById, update, remove} from '../controllers/userController';
+import {find, create, findById, update, remove} from '../controllers/permissionController';
 import {checkPermission} from '../middlewares/middlewares';
 
 let routes = express.Router();
 
-routes.get('/api/users', checkPermission, async (req, res) => {
+routes.get('/api/permissions', checkPermission, async (req, res) => {
 
-try {
+  try {
 
-    const users = await find(req.query);
+      const permissions = await find(req.query);
 
-    res.json(users);
-    
-  } catch(err) {
-    res.status(500).json({ success: false });
-  }
+      res.json(permissions);
+      
+    } catch(err) {
+      res.status(500).json({ success: false });
+    }
 
 });
 
-routes.post('/api/users', checkPermission, async (req, res) => {
+routes.post('/api/permissions', checkPermission, async (req, res) => {
 
 	try {
 
@@ -32,13 +32,14 @@ routes.post('/api/users', checkPermission, async (req, res) => {
 
 });
 
-routes.get('/api/users/:id', checkPermission, async (req, res) => {
+
+routes.get('/api/permissions/:id', checkPermission, async (req, res) => {
 
 	try {
 
-    	const users = await findById(req.params.id);
+    	const permissions = await findById(req.params.id);
 
-    	res.json(users);
+    	res.json(permissions);
 	    
   	} catch(err) {
     	res.status(500).json({ success: false });
@@ -46,7 +47,8 @@ routes.get('/api/users/:id', checkPermission, async (req, res) => {
 
 });
 
-routes.put('/api/users/:id', checkPermission, async (req, res) => {
+
+routes.put('/api/permissions/:id', checkPermission, async (req, res) => {
 
 	try {
 
@@ -60,7 +62,7 @@ routes.put('/api/users/:id', checkPermission, async (req, res) => {
 
 });
 
-routes.delete('/api/users/:id', checkPermission, async (req, res) => {
+routes.delete('/api/permissions/:id', checkPermission, async (req, res) => {
 
 	try {
 

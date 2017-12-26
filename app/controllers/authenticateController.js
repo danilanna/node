@@ -36,9 +36,9 @@ export const refreshTokens = (token, refreshToken) => {
 
 const createTokens = (user, secret, secret2) => {
 
-  	const createToken = jwt.sign({ user: _.pick(user, ['_id', 'isAdmin', 'admin', 'permissions'])}, secret, { expiresIn: tokenExpirationTime});
+  	const createToken = jwt.sign({ user: _.pick(user, ['_id', 'admin', 'permissions'])}, secret, { expiresIn: tokenExpirationTime});
 
-  	const createRefreshToken = jwt.sign({ user: _.pick(user, '_id', 'isAdmin', 'admin', 'permissions')}, secret2, { expiresIn: refreshTokenExpirationTime});
+  	const createRefreshToken = jwt.sign({ user: _.pick(user, '_id', 'admin', 'permissions')}, secret2, { expiresIn: refreshTokenExpirationTime});
 
   	return {createToken, createRefreshToken};
 };
@@ -64,7 +64,7 @@ const verifyTokens = (token, refreshToken) => {
 		let { user: { _id } } = jwt.decode(token, SECRET);
 		userIdToken = _id;
 
-		//In case the user is using the refresh token from other user
+		//If the user is using another user's refresh token
 		if(!userIdRefreshToken || !userIdToken || (userIdRefreshToken !== userIdToken)) {
 		  return {};
 		}

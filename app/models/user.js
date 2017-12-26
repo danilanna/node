@@ -6,5 +6,5 @@ export default mongoose.model('User', new Schema({
 	name: { type: String, index: { unique: true }},
 	password: String,
 	admin: Boolean,
-	permissions: Array
+	permissions: [{ type: Schema.Types.ObjectId, ref: 'Permission' }]
 }));

@@ -1,4 +1,6 @@
 import User from '../models/user';
+import mongoose from 'mongoose';
+const Schema = mongoose.Schema;
 
 export const find = async (criteria) => {
 
@@ -71,5 +73,25 @@ export const remove = async (id) => {
   	} catch(err) {
     	throw err;
   	}
+
+};
+
+export const deleteUserPermission = async (permissionId) => {
+
+  try {
+
+      let users = await find({permissions: { $elemMatch: { $in: [permissionId]} }});
+
+      users.forEach((user) => {
+
+        user.permissions.splice(user.permissions.indexOf(permissionId), 1);
+
+        return update(user._id, user);
+
+      });
+      
+    } catch(err) {
+      throw err;
+    }
 
 };
