@@ -1,5 +1,7 @@
 import express from 'express';
-import {login} from '../controllers/authenticateController';
+import AuthenticateController from '../controllers/authenticateController';
+
+const authenticateController = new AuthenticateController();
 
 let routes = express.Router();
 
@@ -22,7 +24,7 @@ routes.post('/api/authenticate', async (req, res) => {
 
 	try {
     
-		const { createToken, createRefreshToken } = await login(req.body);
+		const { createToken, createRefreshToken } = await authenticateController.login(req.body);
 
 		if(!createToken || !createRefreshToken) {
 			res.status(404).json({
@@ -40,6 +42,7 @@ routes.post('/api/authenticate', async (req, res) => {
 		});
 	    
   	} catch(err) {
+  		console.log(err);
   		res.status(500).json({ success: false });
   	}
 

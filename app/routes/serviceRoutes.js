@@ -1,14 +1,16 @@
 import express from 'express';
-import {find, create, findById, update, remove} from '../controllers/serviceController';
+import ServiceController from '../controllers/serviceController';
 import {checkPermission} from '../middlewares/middlewares';
 
 let routes = express.Router();
+
+const serviceController = new ServiceController();
 
 routes.get('/api/services', checkPermission, async (req, res) => {
 
 try {
 
-    const services = await find(req.query);
+    const services = await serviceController.find(req.query);
 
     res.json(services);
     
@@ -22,7 +24,7 @@ routes.post('/api/services', checkPermission, async (req, res) => {
 
 	try {
 
-    	const service = await create(req.body);
+    	const service = await serviceController.create(req.body);
 
     	res.json({ success: true, service: service });
 	    
@@ -36,7 +38,7 @@ routes.get('/api/services/:id', checkPermission, async (req, res) => {
 
 	try {
 
-    	const services = await findById(req.params.id);
+    	const services = await serviceController.findById(req.params.id);
 
     	res.json(services);
 	    
@@ -50,7 +52,7 @@ routes.put('/api/services/:id', checkPermission, async (req, res) => {
 
 	try {
 
-    	await update(req.params.id, req.body);
+    	await serviceController.update(req.params.id, req.body);
 
     	res.json({ success: true });
 	    
@@ -64,7 +66,7 @@ routes.delete('/api/services/:id', checkPermission, async (req, res) => {
 
 	try {
 
-    	await remove(req.params.id);
+    	await serviceController.remove(req.params.id);
 
     	res.json({ success: true });
 	    

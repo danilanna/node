@@ -1,14 +1,16 @@
 import express from 'express';
-import {find, create, findById, update, remove} from '../controllers/permissionController';
+import PermissionController from '../controllers/permissionController';
 import {checkPermission} from '../middlewares/middlewares';
 
 let routes = express.Router();
+
+const permissionController = new PermissionController();
 
 routes.get('/api/permissions', checkPermission, async (req, res) => {
 
   try {
 
-      const permissions = await find(req.query);
+      const permissions = await permissionController.find(req.query);
 
       res.json(permissions);
       
@@ -22,7 +24,7 @@ routes.post('/api/permissions', checkPermission, async (req, res) => {
 
 	try {
 
-    	const user = await create(req.body);
+    	const user = await permissionController.create(req.body);
 
     	res.json({ success: true, user: user });
 	    
@@ -37,7 +39,7 @@ routes.get('/api/permissions/:id', checkPermission, async (req, res) => {
 
 	try {
 
-    	const permissions = await findById(req.params.id);
+    	const permissions = await permissionController.findById(req.params.id);
 
     	res.json(permissions);
 	    
@@ -52,7 +54,7 @@ routes.put('/api/permissions/:id', checkPermission, async (req, res) => {
 
 	try {
 
-    	await update(req.params.id, req.body);
+    	await permissionController.update(req.params.id, req.body);
 
     	res.json({ success: true });
 	    
@@ -66,7 +68,7 @@ routes.delete('/api/permissions/:id', checkPermission, async (req, res) => {
 
 	try {
 
-    	await remove(req.params.id);
+    	await permissionController.remove(req.params.id);
 
     	res.json({ success: true });
 	    

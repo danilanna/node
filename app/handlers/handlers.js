@@ -1,4 +1,6 @@
-import {refreshTokens} from '../controllers/authenticateController';
+import AuthenticateController from '../controllers/authenticateController';
+
+const authenticateController = new AuthenticateController();
 
 export const errorHandler = async (err, req, res, next) => {
   res.set('Access-Control-Allow-Origin', 'http://localhost:8080');
@@ -16,7 +18,7 @@ export const errorHandler = async (err, req, res, next) => {
   			return;
   		}
 
-    	const {createToken, createRefreshToken, user} = await refreshTokens(token, refreshToken);
+    	const {createToken, createRefreshToken, user} = await authenticateController.refreshTokens(token, refreshToken);
 
     	if (createToken && createRefreshToken) {
       	res.set('Access-Control-Expose-Headers', 'x-token, x-refresh-token');

@@ -1,5 +1,7 @@
 import LRU from 'lru-cache';
-import * as serviceController from '../controllers/serviceController';
+import ServiceController from '../controllers/serviceController';
+
+const serviceController = new ServiceController();
 
 let options = { max: 500,
 				maxAge: 86400000,
@@ -17,7 +19,7 @@ export const setInitialCache = async () => {
 		}
 
 		promise = new Promise((success, reject) => {
-
+			
 			if(cache.values().length === 0) {
 
 				serviceController.find({}, true).then((services) => {
@@ -28,6 +30,7 @@ export const setInitialCache = async () => {
 					success();
 				});
 			}
+			
 		});
 
 		return promise;

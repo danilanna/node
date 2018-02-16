@@ -1,14 +1,19 @@
 import Service from '../models/service';
-import * as cacheController from '../controllers/cacheController';
+import * as cacheController from './cacheController';
 
-export const find = async (criteria, isNotPaginated) => {
+export default class ServiceController {
 
-	try {
+  async find(criteria, isNotPaginated) {
 
-      if ( isNotPaginated ) {
+    try {
+
+      if (isNotPaginated) {
         return await Service.find(criteria);
       } else {
-        const pagination = {page: Number(criteria.page), limit: Number(criteria.limit)};
+        const pagination = {
+          page: Number(criteria.page),
+          limit: Number(criteria.limit)
+        };
 
         delete criteria.page;
         delete criteria.limit;
@@ -16,72 +21,74 @@ export const find = async (criteria, isNotPaginated) => {
         return await Service.paginate(criteria, pagination);
       }
 
-    } catch(err) {
-  		throw err;
-  	}
-};
+    } catch (err) {
+      throw err;
+    }
+  }
 
-export const findOne = async (criteria) => {
+  async findOne(criteria) {
 
-	try {
+    try {
 
-		  const condition = Service.where(criteria);
+      const condition = Service.where(criteria);
 
-    	return await Service.findOne(condition);
-	    
-  	} catch(err) {
-    	throw err;
-  	}
+      return await Service.findOne(condition);
 
-};
+    } catch (err) {
+      throw err;
+    }
 
-export const create = async (newService) => {
+  }
 
-	try {
+  async create(newService) {
 
-		const service = new Service(newService),
-    result = await service.save();
+    try {
 
-    cacheController.setCacheValue(result.api + " " + result.method, result.permissions);
+      const service = new Service(newService),
+        result = await service.save();
 
-    return result;
+      cacheController.setCacheValue(result.api + " " + result.method, result.permissions);
 
-	} catch(err) {
-  		throw err;
-  	}
-};
+      return result;
 
-export const findById = async (id) => {
+    } catch (err) {
+      throw err;
+    }
+  }
 
-	try {
+  async findById(id) {
 
-		return await Service.findById(id).populate('permissions');
+    try {
 
-	} catch(err) {
-  		throw err;
-  	}
+      return await Service.findById(id).populate('permissions');
 
-};
+    } catch (err) {
+      throw err;
+    }
 
-export const update = async (id, body) => {
+  }
 
-	try {
+  async update(id, body) {
 
-    	const result = await Service.findByIdAndUpdate(id, { $set: body});
+    try {
+
+      const result = await Service.findByIdAndUpdate(id, {
+        $set: body
+      });
 
       cacheController.setCacheValue(body.api + " " + body.method, body.permissions);
 
       return result;
-	    
-  	} catch(err) {
-  		throw err;
-  	}
 
-};
+    } catch (err) {
+      throw err;
+    }
 
-export const remove = async (id) => {
+  }
 
-	try {
+  async remove(id) {
+
+    try {
 
       const service = await findById(id);
 
@@ -89,30 +96,38 @@ export const remove = async (id) => {
 
       cacheController.deleteCacheValue(service.api + " " + service.method);
 
-  	} catch(err) {
-    	throw err;
-  	}
+    } catch (err) {
+      throw err;
+    }
 
-};
+  }
 
-export const deleteServicePermission = async (permissionId) => {
+  async deleteServicePermission(permissionId) {
 
-  try {
+    try {
 
-      let services = await find({permissions: { $elemMatch: { $in: [permissionId]} }}, true);
+      let services = await this.find({
+        permissions: {
+          $elemMatch: {
+            $in: [permissionId]
+          }
+        }
+      }, true);
 
       services.forEach((service) => {
 
         service.permissions.splice(service.permissions.indexOf(permissionId), 1);
 
-        update(service._id, service);
+        this.update(service._id, service);
 
         cacheController.setCacheValue(service.api + " " + service.method, service.permissions);
 
       });
-      
-    } catch(err) {
+
+    } catch (err) {
       throw err;
     }
 
-};
+  }
+
+}

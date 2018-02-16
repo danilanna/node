@@ -1,104 +1,121 @@
 import User from '../models/user';
 
-export const find = async (criteria, isNotPaginated) => {
+export default class UserController {
 
-	try {
+  constructor() {}
 
-    if ( isNotPaginated ) {
-      return await User.find(criteria);
-    } else {
-      const pagination = {page: Number(criteria.page), limit: Number(criteria.limit)};
+  async find(criteria, isNotPaginated) {
 
-      delete criteria.page;
-      delete criteria.limit;
+    try {
 
-      return await User.paginate(criteria, pagination);
+      if (isNotPaginated) {
+        return await User.find(criteria);
+      } else {
+        const pagination = {
+          page: Number(criteria.page),
+          limit: Number(criteria.limit)
+        };
+
+        delete criteria.page;
+        delete criteria.limit;
+
+        return await User.paginate(criteria, pagination);
+      }
+
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  };
+
+  async findOne(criteria) {
+
+    try {
+
+      const condition = User.where(criteria);
+
+      return await User.findOne(condition);
+
+    } catch (err) {
+      throw err;
     }
 
-    } catch(err) {
-  		throw err;
-  	}
-};
+  };
 
-export const findOne = async (criteria) => {
+  async create(newUser) {
 
-	try {
+    try {
 
-		const condition = User.where(criteria);
+      const user = new User(newUser);
 
-    	return await User.findOne(condition);
-	    
-  	} catch(err) {
-    	throw err;
-  	}
+      return await user.save();
 
-};
+    } catch (err) {
+      throw err;
+    }
+  };
 
-export const create = async (newUser) => {
+  async findById(id) {
 
-	try {
+    try {
 
-		const user = new User(newUser);
+      return await User.findById(id).populate('permissions');
 
-		return await user.save();
+    } catch (err) {
+      throw err;
+    }
 
-	} catch(err) {
-  		throw err;
-  	}
-};
+  };
 
-export const findById = async (id) => {
+  async update(id, body) {
 
-	try {
+    try {
 
-		return await User.findById(id).populate('permissions');
+      return await User.findByIdAndUpdate(id, {
+        $set: body
+      });
 
-	} catch(err) {
-  		throw err;
-  	}
+    } catch (err) {
+      throw err;
+    }
 
-};
+  };
 
-export const update = async (id, body) => {
+  async remove(id) {
 
-	try {
+    try {
 
-    	return await User.findByIdAndUpdate(id, { $set: body});
-	    
-  	} catch(err) {
-  		throw err;
-  	}
+      return await User.findByIdAndRemove(id);
 
-};
+    } catch (err) {
+      throw err;
+    }
 
-export const remove = async (id) => {
+  };
 
-	try {
+  async deleteUserPermission(permissionId) {
 
-    	return await User.findByIdAndRemove(id);
-	    
-  	} catch(err) {
-    	throw err;
-  	}
+    try {
 
-};
-
-export const deleteUserPermission = async (permissionId) => {
-
-  try {
-
-      let users = await find({permissions: { $elemMatch: { $in: [permissionId]} }}, true);
+      let users = await this.find({
+        permissions: {
+          $elemMatch: {
+            $in: [permissionId]
+          }
+        }
+      }, true);
 
       users.forEach((user) => {
 
         user.permissions.splice(user.permissions.indexOf(permissionId), 1);
 
-        return update(user._id, user);
+        return this.update(user._id, user);
 
       });
-      
-    } catch(err) {
+
+    } catch (err) {
       throw err;
     }
+  };
 
-};
+}

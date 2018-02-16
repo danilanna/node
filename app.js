@@ -81,8 +81,6 @@ app.use(service);
 // =================================================================
 // ======================= START THE SERVER ========================
 // =================================================================
-// ===================================== ver se precisa disso!!!!!
-app.options('*', cors(corsOptions))
 app.listen(port);
 console.log('Magic happens at http://localhost:' + port);
 

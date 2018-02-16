@@ -1,81 +1,91 @@
 import Permission from '../models/permission';
-import * as userController from '../controllers/userController';
-import * as serviceController from '../controllers/serviceController';
+import UserController from './userController';
+import ServiceController from './serviceController';
 
-export const find = async (criteria, isNotPaginated) => {
+const serviceController = new ServiceController(),
+      userController = new UserController();
 
-	try {
+export default class PermissionsController {
 
-    if ( criteria !== undefined && criteria.page === undefined) {
-      return await Permission.find(criteria);
-    } else {
-      const pagination = {page: Number(criteria.page), limit: Number(criteria.limit)};
+  async find(criteria, isNotPaginated) {
 
-      delete criteria.page;
-      delete criteria.limit;
+    try {
 
-      return await Permission.paginate(criteria, pagination);
+      if (criteria !== undefined && criteria.page === undefined) {
+        return await Permission.find(criteria);
+      } else {
+        const pagination = {
+          page: Number(criteria.page),
+          limit: Number(criteria.limit)
+        };
+
+        delete criteria.page;
+        delete criteria.limit;
+
+        return await Permission.paginate(criteria, pagination);
+      }
+
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  async findOne(criteria) {
+
+    try {
+
+      const condition = Permission.where(criteria);
+
+      return await Permission.findOne(condition);
+
+    } catch (err) {
+      throw err;
     }
 
-  } catch(err) {
-		throw err;
-	}
-};
+  };
 
-export const findOne = async (criteria) => {
+  async create(newPermission) {
 
-	try {
+    try {
 
-		  const condition = Permission.where(criteria);
+      const permission = new Permission(newPermission);
 
-    	return await Permission.findOne(condition);
-	    
-  	} catch(err) {
-    	throw err;
-  	}
+      return permission.save();
 
-};
+    } catch (err) {
+      throw err;
+    }
+  };
 
-export const create = (newPermission) => {
+  async findById(id) {
 
-	try {
+    try {
 
-		const permission = new Permission(newPermission);
+      return await Permission.findById(id);
 
-		return permission.save();
+    } catch (err) {
+      throw err;
+    }
 
-	} catch(err) {
-  		throw err;
-  	}
-};
+  };
 
-export const findById = async (id) => {
+  async update(id, body) {
 
-	try {
+    try {
 
-		return await Permission.findById(id);
+      return await Permission.findByIdAndUpdate(id, {
+        $set: body
+      });
 
-	} catch(err) {
-  		throw err;
-	}
+    } catch (err) {
+      throw err;
+    }
 
-};
+  };
 
-export const update = async (id, body) => {
+  async remove(id) {
 
-	try {
-
-    	return await Permission.findByIdAndUpdate(id, { $set: body});
-	    
-  	} catch(err) {
-  		throw err;
-  	}
-
-};
-
-export const remove = async (id) => {
-
-	try {
+    try {
 
       //Whether delete a permission, also delete it from users and services.
 
@@ -85,10 +95,13 @@ export const remove = async (id) => {
       //Removes the service permissions and update the cache value
       await serviceController.deleteServicePermission(id);
 
-    	return await Permission.findByIdAndRemove(id);
-	    
-  	} catch(err) {
-    	throw err;
-  	}
+      return await Permission.findByIdAndRemove(id);
 
-};
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+
+  };
+
+}
