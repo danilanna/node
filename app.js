@@ -2,6 +2,7 @@
 // ======================== IMPORT PACKAGES ========================
 // =================================================================
 import express from 'express';
+import cors from 'cors';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
 import jwt from 'jsonwebtoken';
@@ -26,15 +27,20 @@ import * as cacheController from './app/controllers/cacheController';
 // =================================================================
 // =========================== HANDLERS ============================
 // =================================================================
-import {errorHandler, unauthorizedAccessHandler} from './app/handlers/handlers';
+import {errorHandler} from './app/handlers/handlers';
 import {validateRequest} from './app/middlewares/middlewares';
 
 // =================================================================
 // ===================== SERVER CONFIGURATION ======================
 // =================================================================
-const port = process.env.PORT || 8080;
 let app    = express();
-const config = getConfigurations(process.env.ENVIRONMENT);
+const config = getConfigurations(process.env.ENVIRONMENT),
+port = process.env.PORT || 8083,
+corsOptions = {
+  origin: 'http://localhost:8080',
+  optionsSuccessStatus: 200,
+  credentials: true
+};
 mongoose.Promise = global.Promise;
 
 if(process.env.ENVIRONMENT === 'test'){
@@ -48,14 +54,16 @@ if(process.env.ENVIRONMENT === 'test'){
 // use body parser so we can get info from POST and/or URL parameters
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(expressJwt({secret: config.session.secret}).unless({path: ['/', { url: '/api/authenticate', methods: ['POST']}]}));
+app.use(expressJwt({secret: config.session.secret}).unless({path: ['/', { url: '/api/authenticate', methods: ['POST', 'OPTIONS']}]}));
 
 // use morgan to log requests to the console
 app.use(morgan('dev'));
 
+//cors
+app.use(cors(corsOptions))
+
 // error handler
 app.use(errorHandler);
-app.use(unauthorizedAccessHandler);
 app.use(validateRequest);
 
 cacheController.setInitialCache().then(() => {
@@ -73,6 +81,8 @@ app.use(service);
 // =================================================================
 // ======================= START THE SERVER ========================
 // =================================================================
+// ===================================== ver se precisa disso!!!!!
+app.options('*', cors(corsOptions))
 app.listen(port);
 console.log('Magic happens at http://localhost:' + port);
 

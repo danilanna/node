@@ -131,8 +131,8 @@ describe('Authentication', () => {
 
     it('it should fail using different userId token', (done) => {
 
-      	const firstUser = jwt.sign({ user: {_id: 1, name: 'Varys'}}, SECRET, { expiresIn: '2s'});
-     	const secondUser = jwt.sign({ user: {_id: 2, name: 'Jhon'}}, SECRET_2+'2', { expiresIn: '1m'});
+      	const firstUser = jwt.sign({_id: 1, name: 'Varys'}, SECRET, { expiresIn: '2s'});
+     	const secondUser = jwt.sign({_id: 2, name: 'Jhon'}, SECRET_2+'2', { expiresIn: '1m'});
 
     	let expire = () => {
          	chai.request(server)
@@ -150,8 +150,8 @@ describe('Authentication', () => {
 
     it('it should fail without userId in token', (done) => {
 
-      	const firstUser = jwt.sign({ user: { name: 'Varys'}}, SECRET, { expiresIn: '2s'});
-      	const secondUser = jwt.sign({ user: { name: 'Jhon'}}, SECRET_2, { expiresIn: '1m'});
+      	const firstUser = jwt.sign({ name: 'Varys'}, SECRET, { expiresIn: '2s'});
+      	const secondUser = jwt.sign({ name: 'Jhon'}, SECRET_2, { expiresIn: '1m'});
 
     	let expire = () => {
           	chai.request(server)
@@ -169,8 +169,8 @@ describe('Authentication', () => {
 
     it('it should fail with invalid refresh token', (done) => {
 
-      	const firstUser = jwt.sign({ user: { name: 'Varys'}}, SECRET, { expiresIn: '2s'});
-      	const secondUser = jwt.sign({ user: { name: 'Jhon'}}, SECRET, { expiresIn: '1m'}).replace('a', 'b');
+      	const firstUser = jwt.sign({ name: 'Varys'}, SECRET, { expiresIn: '2s'});
+      	const secondUser = jwt.sign({ name: 'Jhon'}, SECRET_2, { expiresIn: '1m'}).replace('a', 'b');
 
     	let expire = () => {
 			chai.request(server)
@@ -188,8 +188,8 @@ describe('Authentication', () => {
 
     it('it should fail with invalid token', (done) => {
 
-      	const firstUser = jwt.sign({ user: { name: 'Varys'}}, SECRET, { expiresIn: '2s'}).replace('a', 'b');
-      	const secondUser = jwt.sign({ user: { name: 'Jhon'}}, SECRET, { expiresIn: '1m'});
+      	const firstUser = jwt.sign({ name: 'Varys'}, SECRET, { expiresIn: '2s'}).replace('a', 'b');
+      	const secondUser = jwt.sign({ name: 'Jhon'}, SECRET_2, { expiresIn: '1m'});
 
     	let expire = () => {
 			chai.request(server)
@@ -207,8 +207,8 @@ describe('Authentication', () => {
 
     it('it should fail with invalid refresh token signature', (done) => {
 
-      	const firstUser = jwt.sign({ user: { _id: 1, name: 'Varys'}}, SECRET, { expiresIn: '2s'});
-      	const secondUser = jwt.sign({ user: { _id: 2, name: 'Jhon'}}, 'test', { expiresIn: '1m'});
+      	const firstUser = jwt.sign({ _id: 1, name: 'Varys'}, SECRET, { expiresIn: '2s'});
+      	const secondUser = jwt.sign({ _id: 2, name: 'Jhon'}, 'test', { expiresIn: '1m'});
 
     	let expire = () => {
 			chai.request(server)
@@ -226,8 +226,8 @@ describe('Authentication', () => {
 
     it('it should fail with invalid token signature', (done) => {
 
-      	const firstUser = jwt.sign({ user: { _id: 1, name: 'Varys'}}, 'test', { expiresIn: '2s'});
-      	const secondUser = jwt.sign({ user: { _id: 2, name: 'Jhon'}}, SECRET_2, { expiresIn: '1m'});
+      	const firstUser = jwt.sign({ _id: 1, name: 'Varys'}, 'test', { expiresIn: '2s'});
+      	const secondUser = jwt.sign({ _id: 2, name: 'Jhon'}, SECRET_2, { expiresIn: '1m'});
 
 		let expire = () => {
 			chai.request(server)

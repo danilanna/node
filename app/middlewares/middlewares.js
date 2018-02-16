@@ -14,8 +14,9 @@ export const validateRequest = (req, res, next) => {
 };
 
 export const checkPermission = (req, res, next) => {
+  
   const permissions = cacheController.getCacheValue(req.route.path + " " + req.method),
-        user = req.user.user,
+        user = req.user,
         userPermissions = user.permissions,
         isAdmin = user.admin;
 

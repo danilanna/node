@@ -1,27 +1,30 @@
 const config = {
 	production: {
 		session: {
-	      	secret: '',
-	      	secret_2: '',
-	      	tokenExpirationTime: ''
+	      	secret: 'Stark',
+	      	secret_2: 'Lannister',
+	      	tokenExpirationTime: '1d',
+	      	refreshTokenExpirationTime: '7d'
 	    },
- 		database: ''
+ 		database: 'mongodb://'
   	},
 	test: {
 		session: {
-			secret: '',
-			secret_2: '',
-			tokenExpirationTime: ''
+			secret: 'Tyrel',
+			secret_2: 'Tully',
+			tokenExpirationTime: '2s',
+			refreshTokenExpirationTime: '7d'
 		},
-		database: ''
+		database: 'mongodb://'
 	},
 	default: {
 		session: {
-			secret: '',
-			secret_2: '',
-			tokenExpirationTime: ''
+			secret: 'Bolton',
+			secret_2: 'Frey',
+			tokenExpirationTime: '1d',
+			refreshTokenExpirationTime: '7d'
 		},
-		database: ''
+		database: 'mongodb://'
 	}
 }
 

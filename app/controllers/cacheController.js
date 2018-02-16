@@ -20,7 +20,7 @@ export const setInitialCache = async () => {
 
 			if(cache.values().length === 0) {
 
-				serviceController.find({}).then((services) => {
+				serviceController.find({}, true).then((services) => {
 
 					services.forEach((val) => {
 						setCacheValue(val.api + " " + val.method, val.permissions);

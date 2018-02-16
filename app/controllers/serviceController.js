@@ -1,11 +1,20 @@
 import Service from '../models/service';
 import * as cacheController from '../controllers/cacheController';
 
-export const find = async (criteria) => {
+export const find = async (criteria, isNotPaginated) => {
 
 	try {
 
-    	return await Service.find(criteria);
+      if ( isNotPaginated ) {
+        return await Service.find(criteria);
+      } else {
+        const pagination = {page: Number(criteria.page), limit: Number(criteria.limit)};
+
+        delete criteria.page;
+        delete criteria.limit;
+
+        return await Service.paginate(criteria, pagination);
+      }
 
     } catch(err) {
   		throw err;
@@ -46,7 +55,7 @@ export const findById = async (id) => {
 
 	try {
 
-		return await Service.findById(id);
+		return await Service.findById(id).populate('permissions');
 
 	} catch(err) {
   		throw err;
@@ -58,7 +67,7 @@ export const update = async (id, body) => {
 
 	try {
 
-    	await Service.findByIdAndUpdate(id, { $set: body});
+    	const result = await Service.findByIdAndUpdate(id, { $set: body});
 
       cacheController.setCacheValue(body.api + " " + body.method, body.permissions);
 
@@ -90,7 +99,7 @@ export const deleteServicePermission = async (permissionId) => {
 
   try {
 
-      let services = await find({permissions: { $elemMatch: { $in: [permissionId]} }});
+      let services = await find({permissions: { $elemMatch: { $in: [permissionId]} }}, true);
 
       services.forEach((service) => {
 

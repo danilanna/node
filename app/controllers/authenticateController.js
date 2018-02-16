@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
 import {getConfigurations} from '../../config/config';
-import {findOne} from './userController';
+import {findOne, findById} from './userController';
 
 const config = getConfigurations(process.env.ENVIRONMENT);
 
@@ -22,23 +22,33 @@ export const login = async (param) => {
 
 };
 
-export const refreshTokens = (token, refreshToken) => {
-  	const {user, refreshSecret} = verifyTokens(token, refreshToken);
+export const refreshTokens = async (token, refreshToken) => {
 
-  	if(!user || !refreshSecret) {
-  		return {};
-  	}
 
-	const {createToken, createRefreshToken} = createTokens(user, SECRET, refreshSecret);
+  	let {user, refreshSecret} = verifyTokens(token, refreshToken);
 
-	return {createToken, createRefreshToken, user};
+  	if (user){
+
+	  	user = await findOne({_id: user._id});
+
+	  	if(!user || !refreshSecret) {
+	  		return {};
+	  	}
+
+		const {createToken, createRefreshToken} = createTokens(user, SECRET, refreshSecret);
+
+		return {createToken, createRefreshToken, user};
+
+	}
+
+	return {};
 };
 
 const createTokens = (user, secret, secret2) => {
 
-  	const createToken = jwt.sign({ user: _.pick(user, ['_id', 'admin', 'permissions'])}, secret, { expiresIn: tokenExpirationTime});
+  	const createToken = jwt.sign(_.pick(user, ['_id', 'admin', 'permissions']), secret, { expiresIn: tokenExpirationTime});
 
-  	const createRefreshToken = jwt.sign({ user: _.pick(user, '_id', 'admin', 'permissions')}, secret2, { expiresIn: refreshTokenExpirationTime});
+  	const createRefreshToken = jwt.sign(_.pick(user, '_id', 'admin', 'permissions'), secret2, { expiresIn: refreshTokenExpirationTime});
 
   	return {createToken, createRefreshToken};
 };
@@ -47,8 +57,9 @@ const verifyTokens = (token, refreshToken) => {
 
 	let userIdRefreshToken, userIdToken;
 
-  	let { user: { _id } } = jwt.decode(refreshToken);
+  	let { _id } = jwt.decode(refreshToken);
    	userIdRefreshToken = _id;
+
 
 	if (!userIdRefreshToken) {
 		return {};
@@ -58,11 +69,13 @@ const verifyTokens = (token, refreshToken) => {
 
 	const refreshSecret = SECRET_2 + user._id;
 
+
 	try {
 
 		jwt.verify(refreshToken, refreshSecret);
-		let { user: { _id } } = jwt.decode(token, SECRET);
+		let { _id } = jwt.decode(token, SECRET);
 		userIdToken = _id;
+
 
 		//If the user is using another user's refresh token
 		if(!userIdRefreshToken || !userIdToken || (userIdRefreshToken !== userIdToken)) {

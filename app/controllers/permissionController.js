@@ -2,15 +2,24 @@ import Permission from '../models/permission';
 import * as userController from '../controllers/userController';
 import * as serviceController from '../controllers/serviceController';
 
-export const find = async (criteria) => {
+export const find = async (criteria, isNotPaginated) => {
 
 	try {
 
-    	return await Permission.find(criteria);
+    if ( criteria !== undefined && criteria.page === undefined) {
+      return await Permission.find(criteria);
+    } else {
+      const pagination = {page: Number(criteria.page), limit: Number(criteria.limit)};
 
-    } catch(err) {
-  		throw err;
-  	}
+      delete criteria.page;
+      delete criteria.limit;
+
+      return await Permission.paginate(criteria, pagination);
+    }
+
+  } catch(err) {
+		throw err;
+	}
 };
 
 export const findOne = async (criteria) => {
@@ -56,7 +65,7 @@ export const update = async (id, body) => {
 
 	try {
 
-    	return await Permission.update(id, { $set: body});
+    	return await Permission.findByIdAndUpdate(id, { $set: body});
 	    
   	} catch(err) {
   		throw err;
