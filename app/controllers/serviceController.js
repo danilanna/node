@@ -1,43 +1,11 @@
 import Service from '../models/service';
 import * as cacheController from './cacheController';
+import GenericController from './genericController';
 
-export default class ServiceController {
+export default class ServiceController extends GenericController {
 
-  async find(criteria, isNotPaginated) {
-
-    try {
-
-      if (isNotPaginated) {
-        return await Service.find(criteria);
-      } else {
-        const pagination = {
-          page: Number(criteria.page),
-          limit: Number(criteria.limit)
-        };
-
-        delete criteria.page;
-        delete criteria.limit;
-
-        return await Service.paginate(criteria, pagination);
-      }
-
-    } catch (err) {
-      throw err;
-    }
-  }
-
-  async findOne(criteria) {
-
-    try {
-
-      const condition = Service.where(criteria);
-
-      return await Service.findOne(condition);
-
-    } catch (err) {
-      throw err;
-    }
-
+  constructor() {
+    super(Service, 'permissions');
   }
 
   async create(newService) {
@@ -54,18 +22,6 @@ export default class ServiceController {
     } catch (err) {
       throw err;
     }
-  }
-
-  async findById(id) {
-
-    try {
-
-      return await Service.findById(id).populate('permissions');
-
-    } catch (err) {
-      throw err;
-    }
-
   }
 
   async update(id, body) {
@@ -90,7 +46,7 @@ export default class ServiceController {
 
     try {
 
-      const service = await findById(id);
+      const service = await super.findById(id);
 
       await service.remove();
 
@@ -106,7 +62,7 @@ export default class ServiceController {
 
     try {
 
-      let services = await this.find({
+      let services = await super.find({
         permissions: {
           $elemMatch: {
             $in: [permissionId]
