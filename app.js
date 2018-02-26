@@ -37,7 +37,7 @@ let app    = express();
 const config = getConfigurations(process.env.ENVIRONMENT),
 port = process.env.PORT || 8083,
 corsOptions = {
-  origin: 'http://localhost:8080',
+  origin: true,
   optionsSuccessStatus: 200,
   credentials: true
 };

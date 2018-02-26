@@ -3,7 +3,7 @@ import AuthenticateController from '../controllers/authenticateController';
 const authenticateController = new AuthenticateController();
 
 export const errorHandler = async (err, req, res, next) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:8080');
+  res.set('Access-Control-Allow-Origin', req.headers['origin']);
 
   let message = 'invalid token...';
 
@@ -25,7 +25,6 @@ export const errorHandler = async (err, req, res, next) => {
       	res.set('x-token', createToken);
       	res.set('x-refresh-token', createRefreshToken);
         res.set('Access-Control-Allow-Credentials', true);
-        res.set('Access-Control-Allow-Origin', 'http://localhost:8080');
         res.set('Content-Type', 'application/json; charset=utf-8');
       	req.user = user;
       	next();
