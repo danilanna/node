@@ -1,44 +1,56 @@
+import mongoose from 'mongoose';
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import jwt from 'jsonwebtoken';
 import server from '../app';
 import User from '../app/models/user';
-import {
-  getConfigurations
-} from '../config/config';
+import {getConfigurations} from '../config/config';
 
-let token, refreshToken;
+let token, refreshToken, user;
 
 const should = chai.should();
 const config = getConfigurations(process.env.ENVIRONMENT);
 const SECRET = config.session.secret;
 const SECRET_2 = config.session.secret_2;
-
-const user = {
-  name: "Jhon",
-  password: "password",
-  email: 'j@snow.com'
-};
+mongoose.Promise = global.Promise;
 
 chai.use(chaiHttp);
 
 describe('Authentication', () => {
   before((done) => {
 
-    const obj = new User(user);
+  	setTimeout(() => {
 
-    obj.save();
+	  	mongoose.connect(config.database, { useMongoClient: true }, () => {
+	        mongoose.connection.db.dropDatabase();
 
-    done();
+        	const jhon = {
+			  name: "Jhon",
+			  password: "password",
+			  email: 'j@snow.com'
+			};
+
+		    const newUser = new User(jhon);
+
+		    newUser.save();
+
+		    user = newUser;
+
+		    done();
+	        
+	    });
+
+    }, 5000);
+  	
   });
 
   it('it should authenticate user', (done) => {
 
-    let expire = () => {
+    const authUser = {email: user.email, password: user.password};
 
       chai.request(server)
         .post('/api/authenticate')
-        .send(user)
+        .send(authUser)
 
         .end((err, res) => {
 
@@ -51,8 +63,6 @@ describe('Authentication', () => {
           res.body.should.have.property('refreshToken');
           done();
         });
-    };
-    setTimeout(expire, 2001);
   });
 
   it('it should fail authenticate invalid user', (done) => {

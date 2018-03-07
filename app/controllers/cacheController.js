@@ -14,26 +14,24 @@ export const setInitialCache = async () => {
 
 	try {
 
-		if(promise){
-			return promise;
-		}
-
-		promise = new Promise((success, reject) => {
+		promise = await new Promise(async (success, reject) => {
 			
 			if(cache.values().length === 0) {
 
-				serviceController.find({}, true).then((services) => {
+				const services = await serviceController.find({}, true);
 
-					services.forEach((val) => {
-						setCacheValue(val.api + " " + val.method, val.permissions);
-					})
-					success();
-				});
+				services.forEach((val) => {
+					setCacheValue(val.api + " " + val.method, val.permissions);
+				})
+
+				success();
 			}
+			
+			success();
 			
 		});
 
-		return promise;
+		return await promise;
 
     } catch(err) {
   		throw err;

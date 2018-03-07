@@ -2,6 +2,7 @@
 // ======================== IMPORT PACKAGES ========================
 // =================================================================
 import express from 'express';
+import http from 'http';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
@@ -9,6 +10,7 @@ import jwt from 'jsonwebtoken';
 import expressJwt from 'express-jwt';
 import _ from 'lodash';
 import mongoose from 'mongoose';
+import Promise from 'bluebird';
 import {getConfigurations} from './config/config';
 
 // =================================================================
@@ -30,10 +32,8 @@ import * as cacheController from './app/controllers/cacheController';
 import {errorHandler} from './app/handlers/handlers';
 import {validateRequest} from './app/middlewares/middlewares';
 
-// =================================================================
-// ===================== SERVER CONFIGURATION ======================
-// =================================================================
-let app    = express();
+let app, httpServer;
+
 const config = getConfigurations(process.env.ENVIRONMENT),
 port = process.env.PORT || 8083,
 corsOptions = {
@@ -41,15 +41,16 @@ corsOptions = {
   optionsSuccessStatus: 200,
   credentials: true
 };
-mongoose.Promise = global.Promise;
 
-if(process.env.ENVIRONMENT === 'test'){
-	mongoose.connect(config.database, { useMongoClient: true }, () => {
-	  mongoose.connection.db.dropDatabase();
-	});
-} else {
-	mongoose.connect(config.database, { useMongoClient: true });
-}
+mongoose.Promise = Promise;
+mongoose.connect(config.database, { useMongoClient: true });
+
+cacheController.setInitialCache();
+
+// =================================================================
+// ===================== SERVER CONFIGURATION ======================
+// =================================================================
+app = express();
 
 // use body parser so we can get info from POST and/or URL parameters
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -66,10 +67,6 @@ app.use(cors(corsOptions))
 app.use(errorHandler);
 app.use(validateRequest);
 
-cacheController.setInitialCache().then(() => {
-	console.log('cache loaded');
-});
-
 // =================================================================
 // ============================ ROUTES =============================
 // =================================================================
@@ -81,7 +78,8 @@ app.use(service);
 // =================================================================
 // ======================= START THE SERVER ========================
 // =================================================================
-app.listen(port);
+httpServer = http.createServer(app);
+httpServer.listen(port);
 console.log('Magic happens at http://localhost:' + port);
 
-export default app;
+export default httpServer;

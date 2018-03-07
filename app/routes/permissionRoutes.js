@@ -24,9 +24,9 @@ routes.post('/api/permissions', checkPermission, async (req, res) => {
 
 	try {
 
-    	const user = await permissionController.create(req.body);
+    	const permission = await permissionController.create(req.body);
 
-    	res.json({ success: true, user: user });
+    	res.json({ success: true, permission: permission });
 	    
   	} catch(err) {
     	res.status(500).json({ success: false });

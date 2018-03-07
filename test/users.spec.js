@@ -5,122 +5,81 @@ import User from '../app/models/user';
 import Permission from '../app/models/permission';
 import Service from '../app/models/service';
 import * as cacheController from '../app/controllers/cacheController';
+import * as userConfiguration from './userConfiguration';
 
-const should = chai.should();
+let should = chai.should(),
+data,
+user,
+userId,
+varysId,
+token,
+refreshToken,
+tokenWithoutPermission,
+refreshTokenWithoutPermission;
 
 chai.use(chaiHttp);
-
-let token, refreshToken, userId, varysId;
-
-let user = {
-    name: "Tywin",
-    password: "password",
-    email: 't@got.com'
-};
-
-let userVarys = {
-    name: "Varys",
-    password: "password",
-    email: 'v@got.com'
-};
-
-let permissionCrud = {
-    name: "All CRUD",
-    description: "All CRUD"
-};
-
-let serviceFindAll = {
-    api: "/api/users",
-    description: "GET"
-};
-
-let serviceRead = {
-    api: "/api/users/:id",
-    description: "GET"
-};
-
-let servicePOST = {
-    api: "/api/users",
-    description: "POST"
-};
-
-let servicePUT = {
-    api: "/api/users/:id",
-    description: "PUT"
-};
-
-let serviceDELETE = {
-    api: "/api/users/:id",
-    description: "DELETE"
-};
-
-let perm = new Permission(permissionCrud);
-perm.save();
-
-user.permissions = [perm._id];
-userVarys.permissions = [perm._id];
-
-let newUser = new User(user);
-
-let varys = new User(userVarys);
-
-newUser.save();
-varys.save();
-
-serviceFindAll.permissions = [perm._id];
-serviceRead.permissions = [perm._id];
-servicePOST.permissions = [perm._id];
-servicePUT.permissions = [perm._id];
-serviceDELETE.permissions = [perm._id];
-
-let servGetFind = new Service(serviceFindAll);
-let servGetRead = new Service(serviceRead);
-let servPost = new Service(servicePOST);
-let servPut = new Service(servicePUT);
-let servDel = new Service(serviceDELETE);
-servGetFind.save();
-servGetRead.save();
-servPost.save();
-servPut.save();
-servDel.save();
-
-cacheController.setCacheValue('/api/users GET', [perm._id.toString()]);
-cacheController.setCacheValue('/api/users/:id GET', [perm._id.toString()]);
-cacheController.setCacheValue('/api/users/:id PUT', [perm._id.toString()]);
-cacheController.setCacheValue('/api/users POST', [perm._id.toString()]);
-cacheController.setCacheValue('/api/users/:id DELETE', [perm._id.toString()]);
-
-userId = newUser._id;
-varysId = varys._id;
-
 
 describe('Users', () => {
 
     before((done) => {
 
         setTimeout(() => {
-            chai.request(server)
-            .post('/api/authenticate')
-            .send(user)
 
-            .end((err, res) => {
+            const promise = userConfiguration.create();
 
-                token = res.body.token;
-                refreshToken = res.body.refreshToken;
+            promise.then(() => {
 
-                res.should.have.status(200);
-                res.body.should.be.a('object');
-                res.body.should.have.property('token');
-                res.body.should.have.property('refreshToken');
-                done();
+                data = userConfiguration.getData();
+
+                userId = data.newUser._id;
+                varysId = data.varys._id;
+                user = data.newUser;
+
+                chai.request(server)
+                .post('/api/authenticate')
+                .send(user)
+
+                .end((err, res) => {
+
+                    token = res.body.token;
+                    refreshToken = res.body.refreshToken;
+
+                    res.should.have.status(200);
+                    res.body.should.be.a('object');
+                    res.body.should.have.property('token');
+                    res.body.should.have.property('refreshToken');
+                    
+                    const jhon = {
+                       name: "Jhon Permission",
+                       password: "password",
+                       email: 'jp@snow.com'
+                     };
+
+                    const newJhonUser = new User(jhon);
+
+                    newJhonUser.save();
+
+                    chai.request(server)
+                    .post('/api/authenticate')
+                    .send(newJhonUser)
+
+                    .end((err, res) => {
+
+                      tokenWithoutPermission = res.body.token;
+                      refreshTokenWithoutPermission = res.body.refreshToken;
+
+                      res.should.have.status(200);
+                      res.body.should.be.a('object');
+                      res.body.should.have.property('token');
+                      res.body.should.have.property('refreshToken');
+                      done();
+                    });
+                });
+
             });
-        }, 5000);
+        }, 2000);
         
   	});
-
-    beforeEach((done) => {
-        setTimeout(done(), 5000);
-    });
 
     it('it should create user', (done) => {
 
@@ -158,10 +117,23 @@ describe('Users', () => {
         });
     });
 
-    it('it should find all users', (done) => {
+    it('it should fail find all users without permission', (done) => {
 
         chai.request(server)
-        .get('/api/users')
+        .get('/api/users?page=1&limit=10')
+        .set({ "authorization":"Bearer " + tokenWithoutPermission })
+        .set({ "x-refresh-token": refreshTokenWithoutPermission })
+
+        .end((err, res) => {
+            res.should.have.status(403);
+            done();
+        });
+    });
+
+    it('it should find all users with pagination', (done) => {
+
+        chai.request(server)
+        .get('/api/users?page=1&limit=10')
         .set({ "authorization":"Bearer " + token })
         .set({ "x-refresh-token": refreshToken })
 
@@ -174,6 +146,21 @@ describe('Users', () => {
         });
     });
 
+    it('it should find all users without pagination', (done) => {
+
+        chai.request(server)
+        .get('/api/users')
+        .set({ "authorization":"Bearer " + token })
+        .set({ "x-refresh-token": refreshToken })
+
+        .end((err, res) => {
+            res.should.have.status(200);
+            res.body.should.be.a('array');
+            res.body.length.should.at.least(1);
+            done();
+        });
+    });
+
     it('it should find users by query params', (done) => {
 
         chai.request(server)
@@ -183,9 +170,8 @@ describe('Users', () => {
         .set({ "x-refresh-token": refreshToken })
 
         .end((err, res) => {
-            res.should.have.status(200);
-            res.body.should.be.a('object');
-            res.body.should.have.property('total', 1);
+            res.body.should.be.a('array');
+            res.body.length.should.be.eql(1);
             done();
         });
     });
@@ -218,22 +204,6 @@ describe('Users', () => {
         .end((err, res) => {
             res.should.have.status(200);
             res.body.should.be.a('object');
-            done();
-        });
-    });
-
-    it('it should fail updating a user', (done) => {
-
-        const user = {name: 'Tyrion'};
-
-        chai.request(server)
-        .put('/api/users/'+varysId)
-        .set({ "authorization":"Bearer " + token })
-        .set({ "x-refresh-token": refreshToken })
-        .send(user)
-
-        .end((err, res) => {
-            res.should.have.status(500);
             done();
         });
     });

@@ -32,13 +32,11 @@ export const errorHandler = async (err, req, res, next) => {
     		res.status(401).send(message);
         return;
     	}
-  } else if (err.code === 'permission_denied') {
-    message = 'insufficient permissions';
-    res.status(401).send(message);
   } else if (err.code === 'credentials_required') {
     message = 'Unauthorized';
     res.status(401).send(message);
   } else {
+    message = 'insufficient permissions';
     res.status(401).send(message);
   }
 
