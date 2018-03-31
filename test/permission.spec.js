@@ -1,6 +1,5 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import server from '../app';
 import User from '../app/models/user';
 import Permission from '../app/models/permission';
 import Service from '../app/models/service';
@@ -21,43 +20,41 @@ userController = new UserController(),
 serviceController = new ServiceController(),
 permissionController = new PermissionController();
 
+const server = 'http://localhost:' + (process.env.PORT || 8083);
+
 chai.use(chaiHttp);
 
 describe('Permission', () => {
 
     before((done) => {
 
-    	setTimeout(() => {
+	    const promise = permissionConfiguration.create();
 
-		    const promise = permissionConfiguration.create();
+	    promise.then(() => {
 
-		    promise.then(() => {
+	      	data = permissionConfiguration.getData();
 
-		      	data = permissionConfiguration.getData();
+	      	permission = data.permission,
+	    	permissionId = permission._id,
+	        user = data.newUser;
 
-		      	permission = data.permission,
-		    	permissionId = permission._id,
-		        user = data.newUser;
+            chai.request(server)
+            .post('/api/authenticate')
+            .send(user)
 
-	            chai.request(server)
-	            .post('/api/authenticate')
-	            .send(user)
+            .end((err, res) => {
 
-	            .end((err, res) => {
+                token = res.body.token;
+                refreshToken = res.body.refreshToken;
 
-	                token = res.body.token;
-	                refreshToken = res.body.refreshToken;
+                res.should.have.status(200);
+                res.body.should.be.a('object');
+                res.body.should.have.property('token');
+                res.body.should.have.property('refreshToken');
+                done();
+            });
 
-	                res.should.have.status(200);
-	                res.body.should.be.a('object');
-	                res.body.should.have.property('token');
-	                res.body.should.have.property('refreshToken');
-	                done();
-	            });
-
-		    });
-
-		}, 2000);
+	    });
         
   	});
 

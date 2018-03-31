@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import jwt from 'jsonwebtoken';
-import server from '../app';
 import User from '../app/models/user';
 import {getConfigurations} from '../config/config';
 
@@ -12,6 +11,7 @@ const should = chai.should();
 const config = getConfigurations(process.env.ENVIRONMENT);
 const SECRET = config.session.secret;
 const SECRET_2 = config.session.secret_2;
+const server = 'http://localhost:' + (process.env.PORT || 8083);
 mongoose.Promise = global.Promise;
 
 chai.use(chaiHttp);
@@ -19,28 +19,27 @@ chai.use(chaiHttp);
 describe('Authentication', () => {
   before((done) => {
 
-  	setTimeout(() => {
+    setTimeout(() => {
 
-	  	mongoose.connect(config.database, { useMongoClient: true }, () => {
-	        mongoose.connection.db.dropDatabase();
+  	mongoose.connect(config.database, { useMongoClient: true }, () => {
+        mongoose.connection.db.dropDatabase();
 
-        	const jhon = {
-			  name: "Jhon",
-			  password: "password",
-			  email: 'j@snow.com'
-			};
+      	const jhon = {
+			   name: "Jhon",
+  			  password: "password",
+  			  email: 'j@snow.com'
+  			};
 
-		    const newUser = new User(jhon);
+	    const newUser = new User(jhon);
 
-		    newUser.save();
+	    newUser.save().then((val) => {
+        user = val;
+        done();
+      });	    
+        
+    });
 
-		    user = newUser;
-
-		    done();
-	        
-	    });
-
-    }, 5000);
+  }, 3000)
   	
   });
 

@@ -13,9 +13,9 @@ export const validateRequest = (req, res, next) => {
   next();
 };
 
-export const checkPermission = (req, res, next) => {
+export const checkPermission = async (req, res, next) => {
 
-  const permissions = cacheController.getCacheValue(req.route.path + " " + req.method),
+  const permissions = await cacheController.getCacheValue(req.route.path + " " + req.method),
     user = req.user,
     userPermissions = user.permissions,
     isAdmin = user.admin;

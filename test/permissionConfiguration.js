@@ -7,8 +7,8 @@ import * as cacheController from '../app/controllers/cacheController';
 
 let newUser, permission;
 
-export const clear = () => {
-    return new Promise((success, reject) => {
+export const clear = async () => {
+    return await new Promise((success, reject) => {
         const config = getConfigurations(process.env.ENVIRONMENT);
         mongoose.Promise = global.Promise;
         mongoose.connect(config.database, { useMongoClient: true }, () => {
@@ -24,7 +24,7 @@ export const getData = () => {
 	};
 }
 
-const createData = () => {
+const createData = async () => {
 
     let user = {
         name: "Little Finger",
@@ -63,8 +63,7 @@ const createData = () => {
     };
 
     //Permission configuration
-    permission = new Permission(permissionCrud);
-    permission.save();
+    permission = await new Permission(permissionCrud).save();
     //end
 
     //user Service Permission configuration
@@ -80,11 +79,11 @@ const createData = () => {
     let servPut = new Service(permissionPUT);
     let servDel = new Service(permissionDELETE);
 
-    servGetFind.save();
-    servGetRead.save();
-    servPost.save();
-    servPut.save();
-    servDel.save();
+    await servGetFind.save();
+    await servGetRead.save();
+    await servPost.save();
+    await servPut.save();
+    await servDel.save();
 
     cacheController.setCacheValue('/api/permissions GET', [permission._id.toString()]);
     cacheController.setCacheValue('/api/permissions/:id GET', [permission._id.toString()]);
@@ -96,22 +95,19 @@ const createData = () => {
     //User default
     user.permissions = [permission._id];
 
-    newUser = new User(user);
-
-    newUser.save();
+    newUser = await new User(user).save();
 
 }
 
-export const create = () => {
+export const create = async () => {
 
-    return new Promise((success, reject) => {
+    return await new Promise(async (success, reject) => {
 
-        clear().then(() => {
+        await clear();
 
-            createData();
+        await createData();
 
-            success();
+        success();
 
-        });
     });
 }

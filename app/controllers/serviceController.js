@@ -13,9 +13,9 @@ export default class ServiceController extends GenericController {
     try {
 
       const service = new Service(newService),
-        result = await service.save();
+      result = await service.save();
 
-      cacheController.setCacheValue(result.api + " " + result.method, result.permissions);
+      await cacheController.setCacheValue(result.api + " " + result.method, result.permissions);
 
       return result;
 
@@ -32,7 +32,7 @@ export default class ServiceController extends GenericController {
         $set: body
       });
 
-      cacheController.setCacheValue(body.api + " " + body.method, body.permissions);
+      await cacheController.setCacheValue(body.api + " " + body.method, body.permissions);
 
       return result;
 
@@ -50,7 +50,7 @@ export default class ServiceController extends GenericController {
 
       await service.remove();
 
-      cacheController.deleteCacheValue(service.api + " " + service.method);
+      await cacheController.deleteCacheValue(service.api + " " + service.method);
 
     } catch (err) {
       throw err;
@@ -70,13 +70,13 @@ export default class ServiceController extends GenericController {
         }
       }, true);
 
-      services.forEach((service) => {
+      services.forEach(async (service) => {
 
         service.permissions.splice(service.permissions.indexOf(permissionId), 1);
 
-        this.update(service._id, service);
+        await this.update(service._id, service);
 
-        cacheController.setCacheValue(service.api + " " + service.method, service.permissions);
+        await cacheController.setCacheValue(service.api + " " + service.method, service.permissions);
 
       });
 

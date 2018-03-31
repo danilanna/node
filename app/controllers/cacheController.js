@@ -1,31 +1,31 @@
-import LRU from 'lru-cache';
 import ServiceController from '../controllers/serviceController';
+import {getConfigurations} from '../../config/config';
+import redis from 'redis';
+import Promise from 'bluebird';
+
+const config = getConfigurations(process.env.ENVIRONMENT);
+
+const client = Promise.promisifyAll(redis.createClient(config.redis_port, config.redis_db, {no_ready_check: true}));
+
+client.auth(config.redis_pw);
 
 const serviceController = new ServiceController();
 
-let options = { max: 500,
-				maxAge: 86400000,
-				length: (n, key) => { return n * 2 + key.length }
-			},
-  	cache = LRU(options),
-  	promise;
+let promise;
 
 export const setInitialCache = async () => {
 
 	try {
 
 		promise = await new Promise(async (success, reject) => {
-			
-			if(cache.values().length === 0) {
 
-				const services = await serviceController.find({}, true);
+			await client.flushall();
 
-				services.forEach((val) => {
-					setCacheValue(val.api + " " + val.method, val.permissions);
-				})
+			const services = await serviceController.find({}, true);
 
-				success();
-			}
+			services.forEach(async (val) => {
+				client.set(val.api + " " + val.method, val.permissions.toString());
+			});
 			
 			success();
 			
@@ -38,14 +38,21 @@ export const setInitialCache = async () => {
   	}
 };
 
-export const getCacheValue = (val) => {
-	return cache.get(val) || "";
+export const getCacheValue = async (val) => {
+	return await client.getAsync(val).then((res) => {
+	    return res && res.length > 0 ? res.split(',') : [];
+	});
 }
 
-export const setCacheValue = (key, val) => {
-	cache.set(key, val);
+export const setCacheValue = async (key, val) => {
+	if ( !val || ( val && val.length === 0 ) ) {
+		await deleteCacheValue(key);
+		return;
+	} else {
+		await client.set(key.toString(), val.toString());
+	}
 }
 
-export const deleteCacheValue = (key) => {
-	cache.del(key)
+export const deleteCacheValue = async (key) => {
+	await client.del(key.toString());
 }

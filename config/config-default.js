@@ -3,10 +3,14 @@ const config = {
 		session: {
 	      	secret: 'Stark',
 	      	secret_2: 'Lannister',
-	      	tokenExpirationTime: '1d',
+	      	tokenExpirationTime: '2s',
 	      	refreshTokenExpirationTime: '7d'
 	    },
- 		database: 'mongodb://'
+ 		database: 'mongodb://',
+ 		redis_pw: '',
+ 		redis_db: '',
+ 		redis_port: '',
+ 		port: 8083
   	},
 	test: {
 		session: {
@@ -15,19 +19,14 @@ const config = {
 			tokenExpirationTime: '2s',
 			refreshTokenExpirationTime: '7d'
 		},
-		database: 'mongodb://'
-	},
-	default: {
-		session: {
-			secret: 'Bolton',
-			secret_2: 'Frey',
-			tokenExpirationTime: '1d',
-			refreshTokenExpirationTime: '7d'
-		},
-		database: 'mongodb://'
+		database: 'mongodb://',
+		redis_pw: '',
+ 		redis_db: '',
+ 		redis_port: '',
+		port: 8083
 	}
 }
 
 export const getConfigurations = (env) => {
-  	return config[env] || config.default;
+  	return config[env];
 }

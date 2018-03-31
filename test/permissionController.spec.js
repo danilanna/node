@@ -21,22 +21,19 @@ describe('Permission Controller', () => {
 
   before((done) => {
 
-    setTimeout(() => {
-
       const promise = permissionConfiguration.create();
 
       promise.then(() => {
 
-        data = permissionConfiguration.getData();
+          data = permissionConfiguration.getData();
 
-        permission = data.permission,
+          permission = data.permission,
           permissionId = permission._id,
           user = data.newUser;
 
-        done();
+          done();
 
       })
-    }, 5000);
   });
 
   it('it should delete a permission', (done) => {
@@ -49,7 +46,7 @@ describe('Permission Controller', () => {
           $in: [permissionId]
         }
       }
-    }, true).then((val) => {
+    }).then((val) => {
       users = val;
 
       serviceController.find({
@@ -58,7 +55,7 @@ describe('Permission Controller', () => {
             $in: [permissionId]
           }
         }
-      }, true).then((val) => {
+      }).then((val) => {
         services = val;
 
         users.should.be.a('array');
@@ -81,9 +78,9 @@ describe('Permission Controller', () => {
                 $in: [permissionId]
               }
             }
-          }, true);
+          });
 
-          promiseUsersDeleted.then((val, em, pl) => {
+          promiseUsersDeleted.then((val) => {
 
             usersDeleted = val;
 
@@ -93,16 +90,18 @@ describe('Permission Controller', () => {
                   $in: [permissionId]
                 }
               }
-            }, true).then((val) => {
+            }).then(async (val) => {
               servicesDeleted = val;
 
-              cacheController.getCacheValue(service.api + ' ' + service.method).should.be.empty;
+              const serviceCached = await cacheController.getCacheValue(service.api + ' ' + service.method);
+
+              serviceCached.length.should.be.at.least(0);
 
               usersDeleted.should.be.a('array');
-              usersDeleted.should.be.empty;
+              usersDeleted.forEach(val => val.permissions.should.be.empty);
 
               servicesDeleted.should.be.a('array');
-              servicesDeleted.should.be.empty;
+              servicesDeleted.forEach(val => val.permissions.should.be.empty);
 
               done();
             });

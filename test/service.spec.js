@@ -1,6 +1,5 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import server from '../app';
 import User from '../app/models/user';
 import Permission from '../app/models/permission';
 import Service from '../app/models/service';
@@ -17,32 +16,32 @@ serviceId;
 
 chai.use(chaiHttp);
 
+const server = 'http://localhost:' + (process.env.PORT || 8083);
+
 describe('Service', () => {
 
 	before((done) => {
 
-		setTimeout(() => {
+	    const promise = serviceConfiguration.create();
 
-		    const promise = serviceConfiguration.create();
+	    promise.then(() => {
 
-		    promise.then(() => {
+	      	data = serviceConfiguration.getData();
 
-		      	data = serviceConfiguration.getData();
+	      	permission = data.permission,
+	        user = data.newUser;
 
-		      	permission = data.permission,
-		        user = data.newUser;
+	        let serviceTestPOST = {
+			    api: "/api/test",
+			    method: "POST",
+			    permissions: [permission]
+			};
 
-		        let serviceTestPOST = {
-				    api: "/api/test",
-				    method: "POST",
-				    permissions: [permission]
-				};
+			let postService = new Service(serviceTestPOST);
 
-				let postService = new Service(serviceTestPOST);
+			postService.save().then((val) => {
 
-				postService.save();
-
-				serviceId = postService._id;
+				serviceId = val._id;
 
 	            chai.request(server)
 	            .post('/api/authenticate')
@@ -59,9 +58,10 @@ describe('Service', () => {
 	                res.body.should.have.property('refreshToken');
 	                done();
 	            });
-		        
-		    });
-		}, 2000);
+
+            });
+	        
+	    });
         
   	});
 
@@ -78,11 +78,11 @@ describe('Service', () => {
         .set({ "x-refresh-token": refreshToken })
         .send(service)
 
-        .end((err, res) => {
+        .end(async (err, res) => {
             res.should.have.status(200);
             res.body.should.be.a('object');
             res.body.should.have.property('service');
-            cacheController.getCacheValue("/api/test GET").should.be.empty;
+            cacheController.getCacheValue("/api/test GET").should.not.be.empty;
             done();
         });
     });
@@ -197,9 +197,10 @@ describe('Service', () => {
         .set({ "authorization":"Bearer " + token })
         .set({ "x-refresh-token": refreshToken })
 
-        .end((err, res) => {
+        .end(async (err, res) => {
             res.should.have.status(200);
-            cacheController.getCacheValue("/api/tests POST").should.be.empty;
+            const service = await cacheController.getCacheValue("/api/tests POST");
+            service.should.be.empty;
             done();
         });
     });
