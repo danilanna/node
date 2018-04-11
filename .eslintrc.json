@@ -1,0 +1,26 @@
+{
+    "extends": "airbnb-base",
+    "globals": {
+        "it": true,
+        "describe": true,
+        "before": true
+    },
+    "rules": {
+        "no-underscore-dangle": ["error", 
+            { "allow": 
+                ["_id"] 
+            }
+        ],
+        "class-methods-use-this": ["error", 
+            { "exceptMethods": 
+                ["createTokens", "verifyTokens", "remove", "create", "update"] 
+            }
+        ],
+        "new-cap": ["error", 
+            { "newIsCapExceptions": 
+                ["this.model", "model"],
+                "capIsNewExceptionPattern": "^express" 
+            }
+        ]
+    }
+}

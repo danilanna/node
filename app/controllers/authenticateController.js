@@ -1,123 +1,94 @@
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
-import {getConfigurations} from '../../config/config';
+import getConfigurations from '../../config/config';
 import UserController from './userController';
 
-const userController = new UserController(),
-	config = getConfigurations(process.env.ENVIRONMENT),
-	SECRET = config.session.secret,
-	SECRET_2 = config.session.secret_2,
-	tokenExpirationTime = config.session.tokenExpirationTime,
-	refreshTokenExpirationTime = config.session.refreshTokenExpirationTime;
+const userController = new UserController();
+const config = getConfigurations(process.env.ENVIRONMENT).session;
+const {
+  secret, refreshSecret, tokenExpirationTime, refreshTokenExpirationTime,
+} = config;
 
 export default class AuthenticateController {
+  async login(param) {
+    const user = await userController.findOne(param);
 
-	async login(param) {
+    if (!user) {
+      return {};
+    }
 
-		const user = await userController.findOne(param);
+    return this.createTokens(user, secret, refreshSecret + user._id);
+  }
 
-		if (!user) {
-			return {};
-		}
+  async refreshTokens(token, refreshToken) {
+    const {
+      userIdRefreshToken,
+      refreshTokenSecret,
+    } = this.verifyTokens(token, refreshToken);
 
-		return this.createTokens(user, SECRET, SECRET_2 + user._id);
+    if (userIdRefreshToken) {
+      const user = await userController.findOne({
+        _id: userIdRefreshToken,
+      });
 
-	};
+      if (!user || !refreshTokenSecret) {
+        return {};
+      }
 
-	async refreshTokens(token, refreshToken) {
+      const {
+        createToken,
+        createRefreshToken,
+      } = this.createTokens(user, secret, refreshTokenSecret);
 
+      return {
+        createToken,
+        createRefreshToken,
+        user,
+      };
+    }
 
-		let {
-			user,
-			refreshSecret
-		} = this.verifyTokens(token, refreshToken);
+    return {};
+  }
 
-		if (user) {
+  createTokens(user, secretToken, secretRefreshToken) {
+    const createToken = jwt.sign(_.pick(user, ['_id', 'admin', 'permissions']), secretToken, {
+      expiresIn: tokenExpirationTime,
+    });
 
-			user = await userController.findOne({
-				_id: user._id
-			});
+    const createRefreshToken = jwt.sign(_.pick(user, '_id', 'admin', 'permissions'), secretRefreshToken, {
+      expiresIn: refreshTokenExpirationTime,
+    });
 
-			if (!user || !refreshSecret) {
-				return {};
-			}
+    return {
+      createToken,
+      createRefreshToken,
+    };
+  }
 
-			const {
-				createToken,
-				createRefreshToken
-			} = this.createTokens(user, SECRET, refreshSecret);
+  verifyTokens(token, refreshToken) {
+    try {
+      const userIdRefreshToken = jwt.decode(refreshToken)._id;
 
-			return {
-				createToken,
-				createRefreshToken,
-				user
-			};
+      if (!userIdRefreshToken) {
+        return {};
+      }
 
-		}
+      const refreshTokenSecret = refreshSecret + userIdRefreshToken;
 
-		return {};
-	};
+      jwt.verify(refreshToken, refreshTokenSecret);
+      const userIdToken = jwt.decode(token, secret)._id;
 
-	createTokens(user, secret, secret2) {
+      // If the user is using another user's refresh token
+      if (!userIdRefreshToken || !userIdToken || (userIdRefreshToken !== userIdToken)) {
+        return {};
+      }
 
-		const createToken = jwt.sign(_.pick(user, ['_id', 'admin', 'permissions']), secret, {
-			expiresIn: tokenExpirationTime
-		});
-
-		const createRefreshToken = jwt.sign(_.pick(user, '_id', 'admin', 'permissions'), secret2, {
-			expiresIn: refreshTokenExpirationTime
-		});
-
-		return {
-			createToken,
-			createRefreshToken
-		};
-	};
-
-	verifyTokens(token, refreshToken) {
-
-		let userIdRefreshToken, userIdToken;
-
-		let {
-			_id
-		} = jwt.decode(refreshToken);
-		userIdRefreshToken = _id;
-
-
-		if (!userIdRefreshToken) {
-			return {};
-		}
-
-		const user = {
-			_id: userIdRefreshToken
-		};
-
-		const refreshSecret = SECRET_2 + user._id;
-
-
-		try {
-
-			jwt.verify(refreshToken, refreshSecret);
-			let {
-				_id
-			} = jwt.decode(token, SECRET);
-			userIdToken = _id;
-
-
-			//If the user is using another user's refresh token
-			if (!userIdRefreshToken || !userIdToken || (userIdRefreshToken !== userIdToken)) {
-				return {};
-			}
-
-		} catch (err) {
-			return {};
-		}
-
-		return {
-			user,
-			refreshSecret
-		};
-
-	};
-
+      return {
+        userIdRefreshToken,
+        refreshTokenSecret,
+      };
+    } catch (err) {
+      return {};
+    }
+  }
 }

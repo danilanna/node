@@ -1,58 +1,48 @@
-import ServiceController from '../controllers/serviceController';
-import {getConfigurations} from '../../config/config';
 import redis from 'redis';
 import Promise from 'bluebird';
+import ServiceController from '../controllers/serviceController';
+import getConfigurations from '../../config/config';
 
 const config = getConfigurations(process.env.ENVIRONMENT);
-
-const client = Promise.promisifyAll(redis.createClient(config.redis_port, config.redis_db, {no_ready_check: true}));
+const target = redis.createClient(config.redis_port, config.redis_db, { no_ready_check: true });
+const client = Promise.promisifyAll(target);
+const serviceController = new ServiceController();
 
 client.auth(config.redis_pw);
 
-const serviceController = new ServiceController();
-
-let promise;
-
 export const setInitialCache = async () => {
+  try {
+    const promise = await new Promise(async (success) => {
+      await client.flushall();
 
-	try {
+      const services = await serviceController.find({}, true);
 
-		promise = await new Promise(async (success, reject) => {
+      services.forEach(async (val) => {
+        client.set(`${val.api} ${val.method}`, val.permissions.toString());
+      });
 
-			await client.flushall();
+      success();
+    });
 
-			const services = await serviceController.find({}, true);
+    return await promise;
+  } catch (err) {
+    throw err;
+  }
+};
 
-			services.forEach(async (val) => {
-				client.set(val.api + " " + val.method, val.permissions.toString());
-			});
-			
-			success();
-			
-		});
-
-		return await promise;
-
-    } catch(err) {
-  		throw err;
-  	}
+export const deleteCacheValue = async (key) => {
+  await client.del(key.toString());
 };
 
 export const getCacheValue = async (val) => {
-	return await client.getAsync(val).then((res) => {
-	    return res && res.length > 0 ? res.split(',') : [];
-	});
-}
+  const res = await client.getAsync(val);
+  return res && res.length > 0 ? res.split(',') : [];
+};
 
 export const setCacheValue = async (key, val) => {
-	if ( !val || ( val && val.length === 0 ) ) {
-		await deleteCacheValue(key);
-		return;
-	} else {
-		await client.set(key.toString(), val.toString());
-	}
-}
-
-export const deleteCacheValue = async (key) => {
-	await client.del(key.toString());
-}
+  if (!val || (val && val.length === 0)) {
+    await deleteCacheValue(key);
+    return;
+  }
+  await client.set(key.toString(), val.toString());
+};

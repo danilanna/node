@@ -1,81 +1,61 @@
 import express from 'express';
 import PermissionController from '../controllers/permissionController';
-import {checkPermission} from '../middlewares/middlewares';
+import { checkPermission } from '../middlewares/middlewares';
 
-let routes = express.Router();
+const routes = express.Router();
 
 const permissionController = new PermissionController();
 
 routes.get('/api/permissions', checkPermission, async (req, res) => {
-
   try {
+    const permissions = await permissionController.find(req.query);
 
-      const permissions = await permissionController.find(req.query);
-
-      res.json(permissions);
-      
-    } catch(err) {
-      res.status(500).json({ success: false });
-    }
-
+    res.json(permissions);
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
 });
 
 routes.post('/api/permissions', checkPermission, async (req, res) => {
+  try {
+    const permission = await permissionController.create(req.body);
 
-	try {
-
-    	const permission = await permissionController.create(req.body);
-
-    	res.json({ success: true, permission: permission });
-	    
-  	} catch(err) {
-    	res.status(500).json({ success: false });
-  	}
-
+    res.json({ success: true, permission });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
 });
 
 
 routes.get('/api/permissions/:id', checkPermission, async (req, res) => {
+  try {
+    const permissions = await permissionController.findById(req.params.id);
 
-	try {
-
-    	const permissions = await permissionController.findById(req.params.id);
-
-    	res.json(permissions);
-	    
-  	} catch(err) {
-    	res.status(500).json({ success: false });
-  	}
-
+    res.json(permissions);
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
 });
 
 
 routes.put('/api/permissions/:id', checkPermission, async (req, res) => {
+  try {
+    await permissionController.update(req.params.id, req.body);
 
-	try {
-
-    	await permissionController.update(req.params.id, req.body);
-
-    	res.json({ success: true });
-	    
-  	} catch(err) {
-    	res.status(500).json({ success: false });
-  	}
-
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
 });
 
 routes.delete('/api/permissions/:id', checkPermission, async (req, res) => {
+  try {
+    await permissionController.remove(req.params.id);
 
-	try {
-
-    	await permissionController.remove(req.params.id);
-
-    	res.json({ success: true });
-	    
-  	} catch(err) {
-    	res.status(500).json({ success: false });
-  	}
-
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
 });
 
 export default routes;

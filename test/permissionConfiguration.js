@@ -1,113 +1,103 @@
 import mongoose from 'mongoose';
-import {getConfigurations} from '../config/config';
+import getConfigurations from '../config/config';
 import User from '../app/models/user';
 import Permission from '../app/models/permission';
 import Service from '../app/models/service';
 import * as cacheController from '../app/controllers/cacheController';
 
-let newUser, permission;
+let newUser;
+let newPermission;
 
-export const clear = async () => {
-    return await new Promise((success, reject) => {
-        const config = getConfigurations(process.env.ENVIRONMENT);
-        mongoose.Promise = global.Promise;
-        mongoose.connect(config.database, { useMongoClient: true }, () => {
-            mongoose.connection.db.dropDatabase();
-            success();
-        });
-    });
-}
+export const clear = () => new Promise((success) => {
+  const config = getConfigurations(process.env.ENVIRONMENT);
+  mongoose.Promise = global.Promise;
+  mongoose.connect(config.database, { useMongoClient: true }, () => {
+    mongoose.connection.db.dropDatabase();
+    success();
+  });
+});
 
-export const getData = () => {
-	return {
-		newUser, permission
-	};
-}
+export const getData = () => ({
+  newUser, newPermission,
+});
 
 const createData = async () => {
+  const user = {
+    name: 'Little Finger',
+    password: 'password',
+    email: 'lfinger@got.com',
+  };
 
-    let user = {
-        name: "Little Finger",
-        password: "password",
-        email: 'lfinger@got.com'
-    };
+  const permissionCrud = {
+    name: 'All PERMISSION CRUD',
+    description: 'All CRUD',
+  };
 
-    let permissionCrud = {
-        name: "All PERMISSION CRUD",
-        description: "All CRUD"
-    };
+  const permissionFindAll = {
+    api: '/api/permissions',
+    method: 'GET',
+  };
 
-    let permissionFindAll = {
-        api: "/api/permissions",
-        method: "GET"
-    };
+  const permissionRead = {
+    api: '/api/permissions/:id',
+    method: 'GET',
+  };
 
-    let permissionRead = {
-        api: "/api/permissions/:id",
-        method: "GET"
-    };
+  const permissionPOST = {
+    api: '/api/permissions',
+    method: 'POST',
+  };
 
-    let permissionPOST = {
-        api: "/api/permissions",
-        method: "POST"
-    };
+  const permissionPUT = {
+    api: '/api/permissions/:id',
+    method: 'PUT',
+  };
 
-    let permissionPUT = {
-        api: "/api/permissions/:id",
-        method: "PUT"
-    };
+  const permissionDELETE = {
+    api: '/api/permissions/:id',
+    method: 'DELETE',
+  };
 
-    let permissionDELETE = {
-        api: "/api/permissions/:id",
-        method: "DELETE"
-    };
+  // Permission configuration
+  newPermission = await new Permission(permissionCrud).save();
+  // end
 
-    //Permission configuration
-    permission = await new Permission(permissionCrud).save();
-    //end
+  // user Service Permission configuration
+  permissionFindAll.permissions = [newPermission._id];
+  permissionRead.permissions = [newPermission._id];
+  permissionPOST.permissions = [newPermission._id];
+  permissionPUT.permissions = [newPermission._id];
+  permissionDELETE.permissions = [newPermission._id];
 
-    //user Service Permission configuration
-    permissionFindAll.permissions = [permission._id];
-    permissionRead.permissions = [permission._id];
-    permissionPOST.permissions = [permission._id];
-    permissionPUT.permissions = [permission._id];
-    permissionDELETE.permissions = [permission._id];
+  const servGetFind = new Service(permissionFindAll);
+  const servGetRead = new Service(permissionRead);
+  const servPost = new Service(permissionPOST);
+  const servPut = new Service(permissionPUT);
+  const servDel = new Service(permissionDELETE);
 
-    let servGetFind = new Service(permissionFindAll);
-    let servGetRead = new Service(permissionRead);
-    let servPost = new Service(permissionPOST);
-    let servPut = new Service(permissionPUT);
-    let servDel = new Service(permissionDELETE);
+  await servGetFind.save();
+  await servGetRead.save();
+  await servPost.save();
+  await servPut.save();
+  await servDel.save();
 
-    await servGetFind.save();
-    await servGetRead.save();
-    await servPost.save();
-    await servPut.save();
-    await servDel.save();
+  cacheController.setCacheValue('/api/permissions GET', [newPermission._id.toString()]);
+  cacheController.setCacheValue('/api/permissions/:id GET', [newPermission._id.toString()]);
+  cacheController.setCacheValue('/api/permissions/:id PUT', [newPermission._id.toString()]);
+  cacheController.setCacheValue('/api/permissions POST', [newPermission._id.toString()]);
+  cacheController.setCacheValue('/api/permissions/:id DELETE', [newPermission._id.toString()]);
+  // end
 
-    cacheController.setCacheValue('/api/permissions GET', [permission._id.toString()]);
-    cacheController.setCacheValue('/api/permissions/:id GET', [permission._id.toString()]);
-    cacheController.setCacheValue('/api/permissions/:id PUT', [permission._id.toString()]);
-    cacheController.setCacheValue('/api/permissions POST', [permission._id.toString()]);
-    cacheController.setCacheValue('/api/permissions/:id DELETE', [permission._id.toString()]);
-    //end
+  // User default
+  user.permissions = [newPermission._id];
 
-    //User default
-    user.permissions = [permission._id];
+  newUser = await new User(user).save();
+};
 
-    newUser = await new User(user).save();
+export const create = async () => new Promise(async (success) => {
+  await clear();
 
-}
+  await createData();
 
-export const create = async () => {
-
-    return await new Promise(async (success, reject) => {
-
-        await clear();
-
-        await createData();
-
-        success();
-
-    });
-}
+  success();
+});

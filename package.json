@@ -2,8 +2,9 @@
   "name": "backend-project",
   "main": "app.js",
   "scripts": {
-    "start": "ENVIRONMENT=production nodemon --exec babel-node app.js",
-    "test": "ENVIRONMENT=test nodemon --exec babel-node app.js & ENVIRONMENT=test nyc --reporter=html --reporter=text mocha --compilers js:babel-core/register --require babel-polyfill --timeout 100000"
+    "start": "ENVIRONMENT=production nodemon --exec babel-node app.js --inspect",
+    "test": "ENVIRONMENT=test nodemon --exec babel-node app.js & ENVIRONMENT=test nyc --reporter=html --reporter=text mocha --require babel-core/register --require babel-polyfill --timeout 100000",
+    "lint": "./node_modules/.bin/eslint app/** config/** test/** app.js"
   },
   "dependencies": {
     "bluebird": "^3.5.1",
@@ -17,7 +18,8 @@
     "mongoose": "^4.12.4",
     "mongoose-paginate": "^5.0.3",
     "morgan": "^1.7.0",
-    "redis": "^2.8.0"
+    "redis": "^2.8.0",
+    "winston": "^3.0.0-rc4"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -29,6 +31,9 @@
     "babel-preset-stage-2": "^6.24.1",
     "chai": "^4.1.2",
     "chai-http": "^3.0.0",
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.10.0",
     "mocha": "^4.0.1",
     "nodemon": "^1.12.1",
     "nyc": "^11.2.1"

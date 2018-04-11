@@ -1,79 +1,59 @@
 import express from 'express';
 import ServiceController from '../controllers/serviceController';
-import {checkPermission} from '../middlewares/middlewares';
+import { checkPermission } from '../middlewares/middlewares';
 
-let routes = express.Router();
+const routes = express.Router();
 
 const serviceController = new ServiceController();
 
 routes.get('/api/services', checkPermission, async (req, res) => {
-
-try {
-
+  try {
     const services = await serviceController.find(req.query);
 
     res.json(services);
-    
-  } catch(err) {
+  } catch (err) {
     res.status(500).json({ success: false });
   }
-
 });
 
 routes.post('/api/services', checkPermission, async (req, res) => {
+  try {
+    const service = await serviceController.create(req.body);
 
-	try {
-
-    	const service = await serviceController.create(req.body);
-
-    	res.json({ success: true, service: service });
-	    
-  	} catch(err) {
-    	res.status(500).json({ success: false });
-  	}
-
+    res.json({ success: true, service });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
 });
 
 routes.get('/api/services/:id', checkPermission, async (req, res) => {
+  try {
+    const services = await serviceController.findById(req.params.id);
 
-	try {
-
-    	const services = await serviceController.findById(req.params.id);
-
-    	res.json(services);
-	    
-  	} catch(err) {
-    	res.status(500).json({ success: false });
-  	}
-
+    res.json(services);
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
 });
 
 routes.put('/api/services/:id', checkPermission, async (req, res) => {
+  try {
+    await serviceController.update(req.params.id, req.body);
 
-	try {
-
-    	await serviceController.update(req.params.id, req.body);
-
-    	res.json({ success: true });
-	    
-  	} catch(err) {
-    	res.status(500).json({ success: false });
-  	}
-
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
 });
 
 routes.delete('/api/services/:id', checkPermission, async (req, res) => {
+  try {
+    await serviceController.remove(req.params.id);
 
-	try {
-
-    	await serviceController.remove(req.params.id);
-
-    	res.json({ success: true });
-	    
-  	} catch(err) {
-    	res.status(500).json({ success: false });
-  	}
-
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
 });
 
 export default routes;

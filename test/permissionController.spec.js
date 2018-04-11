@@ -1,62 +1,57 @@
 import chai from 'chai';
-import User from '../app/models/user';
-import Permission from '../app/models/permission';
-import Service from '../app/models/service';
 import * as cacheController from '../app/controllers/cacheController';
 import * as permissionConfiguration from './permissionConfiguration';
 import PermissionController from '../app/controllers/permissionController';
 import ServiceController from '../app/controllers/serviceController';
 import UserController from '../app/controllers/userController';
 
-let should = chai.should(),
-  data,
-  permission,
-  permissionId,
-  user,
-  userController = new UserController(),
-  serviceController = new ServiceController(),
-  permissionController = new PermissionController();
+let permission;
+let permissionId;
+
+const userController = new UserController();
+const serviceController = new ServiceController();
+const permissionController = new PermissionController();
+
+chai.should();
 
 describe('Permission Controller', () => {
-
   before((done) => {
+    const promise = permissionConfiguration.create();
 
-      const promise = permissionConfiguration.create();
+    promise.then(() => {
+      const { newPermission } = permissionConfiguration.getData();
 
-      promise.then(() => {
+      permission = newPermission;
+      permissionId = permission._id;
 
-          data = permissionConfiguration.getData();
-
-          permission = data.permission,
-          permissionId = permission._id,
-          user = data.newUser;
-
-          done();
-
-      })
+      done();
+    });
   });
 
   it('it should delete a permission', (done) => {
-
-    let users, services, service, usersDeleted, servicesDeleted;
+    let users;
+    let services;
+    let service;
+    let usersDeleted;
+    let servicesDeleted;
 
     userController.find({
       permissions: {
         $elemMatch: {
-          $in: [permissionId]
-        }
-      }
-    }).then((val) => {
-      users = val;
+          $in: [permissionId],
+        },
+      },
+    }).then((userResponse) => {
+      users = userResponse;
 
       serviceController.find({
         permissions: {
           $elemMatch: {
-            $in: [permissionId]
-          }
-        }
-      }).then((val) => {
-        services = val;
+            $in: [permissionId],
+          },
+        },
+      }).then(async (serviceResponse) => {
+        services = serviceResponse;
 
         users.should.be.a('array');
         users.length.should.be.at.least(1);
@@ -64,36 +59,34 @@ describe('Permission Controller', () => {
         services.should.be.a('array');
         services.length.should.be.at.least(1);
 
-        service = services[0];
+        [service] = services;
 
-        cacheController.getCacheValue(service.api + ' ' + service.method).should.not.be.empty;
+        await cacheController.getCacheValue(`${service.api} ${service.method}`).should.not.be.empty;
 
         const promise = permissionController.remove(permissionId);
 
         promise.then(async () => {
-
           const promiseUsersDeleted = userController.find({
             permissions: {
               $elemMatch: {
-                $in: [permissionId]
-              }
-            }
+                $in: [permissionId],
+              },
+            },
           });
 
-          promiseUsersDeleted.then((val) => {
-
-            usersDeleted = val;
+          promiseUsersDeleted.then((deletedResponse) => {
+            usersDeleted = deletedResponse;
 
             serviceController.find({
               permissions: {
                 $elemMatch: {
-                  $in: [permissionId]
-                }
-              }
-            }).then(async (val) => {
-              servicesDeleted = val;
+                  $in: [permissionId],
+                },
+              },
+            }).then(async (serviceDeletedResponse) => {
+              servicesDeleted = serviceDeletedResponse;
 
-              const serviceCached = await cacheController.getCacheValue(service.api + ' ' + service.method);
+              const serviceCached = await cacheController.getCacheValue(`${service.api} ${service.method}`);
 
               serviceCached.length.should.be.at.least(0);
 
@@ -105,15 +98,9 @@ describe('Permission Controller', () => {
 
               done();
             });
-
-          })
-
+          });
         });
-
       });
-
     });
-
   });
-
 });

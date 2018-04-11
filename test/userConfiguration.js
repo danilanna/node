@@ -1,115 +1,107 @@
 import mongoose from 'mongoose';
-import {getConfigurations} from '../config/config';
+import getConfigurations from '../config/config';
 import User from '../app/models/user';
 import Permission from '../app/models/permission';
 import Service from '../app/models/service';
 import * as cacheController from '../app/controllers/cacheController';
 
-let newUser, varys;
+let newUser;
+let varys;
 
-export const clear = async () => {
-    return await new Promise((success, reject) => {
-        const config = getConfigurations(process.env.ENVIRONMENT);
-        mongoose.Promise = global.Promise;
-        mongoose.connect(config.database, { useMongoClient: true }, () => {
-            mongoose.connection.db.dropDatabase();
-            success();
-        });
-    });
-}
+export const clear = async () => new Promise((success) => {
+  const config = getConfigurations(process.env.ENVIRONMENT);
+  mongoose.Promise = global.Promise;
+  mongoose.connect(config.database, { useMongoClient: true }, () => {
+    mongoose.connection.db.dropDatabase();
+    success();
+  });
+});
 
-export const getData = () => {
-    return {
-        newUser, varys
-    };
-}
+export const getData = () => ({
+  newUser, varys,
+});
 
-export const create = async () => {
+export const create = async () => new Promise(async (success) => {
+  const user = {
+    name: 'Tywin',
+    password: 'password',
+    email: 't@got.com',
+    admin: true,
+  };
 
-    return await new Promise(async (success, reject) => {
+  const userVarys = {
+    name: 'Varys',
+    password: 'password',
+    email: 'v@got.com',
+  };
 
-        let user = {
-            name: "Tywin",
-            password: "password",
-            email: 't@got.com',
-            admin: true
-        };
+  const permissionCrud = {
+    name: 'All USER CRUD',
+    description: 'All CRUD',
+  };
 
-        let userVarys = {
-            name: "Varys",
-            password: "password",
-            email: 'v@got.com'
-        };
+  const userServiceFindAll = {
+    api: '/api/users',
+    description: 'GET',
+  };
 
-        let permissionCrud = {
-            name: "All USER CRUD",
-            description: "All CRUD"
-        };
+  const userServiceRead = {
+    api: '/api/users/:id',
+    description: 'GET',
+  };
 
-        let userServiceFindAll = {
-            api: "/api/users",
-            description: "GET"
-        };
+  const userServicePOST = {
+    api: '/api/users',
+    description: 'POST',
+  };
 
-        let userServiceRead = {
-            api: "/api/users/:id",
-            description: "GET"
-        };
+  const userServicePUT = {
+    api: '/api/users/:id',
+    description: 'PUT',
+  };
 
-        let userServicePOST = {
-            api: "/api/users",
-            description: "POST"
-        };
+  const userServiceDELETE = {
+    api: '/api/users/:id',
+    description: 'DELETE',
+  };
 
-        let userServicePUT = {
-            api: "/api/users/:id",
-            description: "PUT"
-        };
+    // Permission configuration
+  const perm = await new Permission(permissionCrud).save();
+  // end
 
-        let userServiceDELETE = {
-            api: "/api/users/:id",
-            description: "DELETE"
-        };
+  // user Service Permission configuration
+  userServiceFindAll.permissions = [perm._id];
+  userServiceRead.permissions = [perm._id];
+  userServicePOST.permissions = [perm._id];
+  userServicePUT.permissions = [perm._id];
+  userServiceDELETE.permissions = [perm._id];
 
-        //Permission configuration
-        let perm = await new Permission(permissionCrud).save();
-        //end
+  const userServGetFind = new Service(userServiceFindAll);
+  const userServGetRead = new Service(userServiceRead);
+  const userServPost = new Service(userServicePOST);
+  const userServPut = new Service(userServicePUT);
+  const userServDel = new Service(userServiceDELETE);
 
-        //user Service Permission configuration
-        userServiceFindAll.permissions = [perm._id];
-        userServiceRead.permissions = [perm._id];
-        userServicePOST.permissions = [perm._id];
-        userServicePUT.permissions = [perm._id];
-        userServiceDELETE.permissions = [perm._id];
+  await userServGetFind.save();
+  await userServGetRead.save();
+  await userServPost.save();
+  await userServPut.save();
+  await userServDel.save();
 
-        let userServGetFind = new Service(userServiceFindAll);
-        let userServGetRead = new Service(userServiceRead);
-        let userServPost = new Service(userServicePOST);
-        let userServPut = new Service(userServicePUT);
-        let userServDel = new Service(userServiceDELETE);
+  cacheController.setCacheValue('/api/users GET', [perm._id.toString()]);
+  cacheController.setCacheValue('/api/users/:id GET', [perm._id.toString()]);
+  cacheController.setCacheValue('/api/users/:id PUT', [perm._id.toString()]);
+  cacheController.setCacheValue('/api/users POST', [perm._id.toString()]);
+  cacheController.setCacheValue('/api/users/:id DELETE', [perm._id.toString()]);
+  // end
 
-        await userServGetFind.save();
-        await userServGetRead.save();
-        await userServPost.save();
-        await userServPut.save();
-        await userServDel.save();
+  // User default
+  user.permissions = [perm._id];
+  userVarys.permissions = [perm._id];
 
-        cacheController.setCacheValue('/api/users GET', [perm._id.toString()]);
-        cacheController.setCacheValue('/api/users/:id GET', [perm._id.toString()]);
-        cacheController.setCacheValue('/api/users/:id PUT', [perm._id.toString()]);
-        cacheController.setCacheValue('/api/users POST', [perm._id.toString()]);
-        cacheController.setCacheValue('/api/users/:id DELETE', [perm._id.toString()]);
-        //end
+  newUser = await new User(user).save();
 
-        //User default
-        user.permissions = [perm._id];
-        userVarys.permissions = [perm._id];
+  varys = await new User(userVarys).save();
 
-        newUser = await new User(user).save();
-
-        varys = await new User(userVarys).save();
-
-        success();
-
-    });
-}
+  success();
+});

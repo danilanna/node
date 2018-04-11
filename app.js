@@ -5,12 +5,11 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
-import jwt from 'jsonwebtoken';
 import expressJwt from 'express-jwt';
-import _ from 'lodash';
 import mongoose from 'mongoose';
 import Promise from 'bluebird';
-import {getConfigurations} from './config/config';
+import winston from 'winston';
+import getConfigurations from './config/config';
 
 // =================================================================
 // ============================ ROUTES =============================
@@ -28,60 +27,56 @@ import * as cacheController from './app/controllers/cacheController';
 // =================================================================
 // =========================== HANDLERS ============================
 // =================================================================
-import {errorHandler} from './app/handlers/handlers';
-import {validateRequest} from './app/middlewares/middlewares';
+import errorHandler from './app/handlers/handlers';
+import { validateRequest } from './app/middlewares/middlewares';
 
 const startServer = async () => {
+  const config = getConfigurations(process.env.ENVIRONMENT);
+  const port = config.PORT || 8083;
+  const corsOptions = {
+    origin: true,
+    optionsSuccessStatus: 200,
+    credentials: true,
+  };
 
-	const config = getConfigurations(process.env.ENVIRONMENT),
-	port = config.PORT || 8083,
-	corsOptions = {
-	  origin: true,
-	  optionsSuccessStatus: 200,
-	  credentials: true
-	};
+  mongoose.Promise = Promise;
+  mongoose.connect(config.database, { useMongoClient: true });
 
-	let app;
+  await cacheController.setInitialCache();
 
-	mongoose.Promise = Promise;
-	mongoose.connect(config.database, { useMongoClient: true });
+  // =================================================================
+  // ===================== SERVER CONFIGURATION ======================
+  // =================================================================
+  const app = express();
 
-	await cacheController.setInitialCache();
-	
-	// =================================================================
-	// ===================== SERVER CONFIGURATION ======================
-	// =================================================================
-	app = express();
+  // use body parser so we can get info from POST and or URL parameters
+  app.use(bodyParser.urlencoded({ extended: false }));
+  app.use(bodyParser.json());
+  app.use(expressJwt({ secret: config.session.secret }).unless({ path: ['/', { url: '/api/authenticate', methods: ['POST', 'OPTIONS'] }] }));
 
-	// use body parser so we can get info from POST and/or URL parameters
-	app.use(bodyParser.urlencoded({ extended: false }));
-	app.use(bodyParser.json());
-	app.use(expressJwt({secret: config.session.secret}).unless({path: ['/', { url: '/api/authenticate', methods: ['POST', 'OPTIONS']}]}));
+  // use morgan to log requests to the console
+  app.use(morgan('dev'));
 
-	// use morgan to log requests to the console
-	app.use(morgan('dev'));
+  // cors
+  app.use(cors(corsOptions));
 
-	//cors
-	app.use(cors(corsOptions))
+  // error handler
+  app.use(errorHandler);
+  app.use(validateRequest);
 
-	// error handler
-	app.use(errorHandler);
-	app.use(validateRequest);
+  // =================================================================
+  // ============================ ROUTES =============================
+  // =================================================================
+  app.use(authenticate);
+  app.use(user);
+  app.use(permission);
+  app.use(service);
 
-	// =================================================================
-	// ============================ ROUTES =============================
-	// =================================================================
-	app.use(authenticate);
-	app.use(user);
-	app.use(permission);
-	app.use(service);
-
-	// =================================================================
-	// ======================= START THE SERVER ========================
-	// =================================================================
-	app.listen(port);
-	console.log('Magic happens at http://localhost:' + port);
-
-}
+  // =================================================================
+  // ======================= START THE SERVER ========================
+  // =================================================================
+  app.listen(port);
+  winston.log('info', `Magic happens at http://localhost:${port}`);
+};
 
 startServer();
