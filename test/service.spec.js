@@ -149,6 +149,9 @@ describe('Service', () => {
         res.body.should.be.a('object');
         const cache = await cacheController.getCacheValue('/api/tests POST');
         cache.should.not.be.empty; // eslint-disable-line no-unused-expressions
+
+        const getCache = await cacheController.getCacheValue('/api/test GET');
+        getCache.should.not.be.empty; // eslint-disable-line no-unused-expressions
         done();
       });
   });

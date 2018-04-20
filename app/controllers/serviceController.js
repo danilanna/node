@@ -12,7 +12,7 @@ export default class ServiceController extends GenericController {
       const service = new Service(newService);
       const result = await service.save();
 
-      await cacheController.setCacheValue(`${result.api} ${result.method}`, result.permissions);
+      await cacheController.setCacheValue(`${result.api} ${result.method}`, newService.permissions);
 
       return result;
     } catch (err) {
@@ -22,9 +22,13 @@ export default class ServiceController extends GenericController {
 
   async update(id, body) {
     try {
+      const service = super.findById(id);
+
       const result = await Service.findByIdAndUpdate(id, {
         $set: body,
       });
+
+      await cacheController.deleteCacheValue(`${service.api} ${service.method}`);
 
       await cacheController.setCacheValue(`${body.api} ${body.method}`, body.permissions);
 

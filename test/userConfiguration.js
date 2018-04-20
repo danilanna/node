@@ -88,11 +88,11 @@ export const create = async () => new Promise(async (success) => {
   await userServPut.save();
   await userServDel.save();
 
-  cacheController.setCacheValue('/api/users GET', [perm._id.toString()]);
-  cacheController.setCacheValue('/api/users/:id GET', [perm._id.toString()]);
-  cacheController.setCacheValue('/api/users/:id PUT', [perm._id.toString()]);
-  cacheController.setCacheValue('/api/users POST', [perm._id.toString()]);
-  cacheController.setCacheValue('/api/users/:id DELETE', [perm._id.toString()]);
+  cacheController.setCacheValue('/api/users GET', [{ _id: perm._id.toString() }]);
+  cacheController.setCacheValue('/api/users/:id GET', [{ _id: perm._id.toString() }]);
+  cacheController.setCacheValue('/api/users/:id PUT', [{ _id: perm._id.toString() }]);
+  cacheController.setCacheValue('/api/users POST', [{ _id: perm._id.toString() }]);
+  cacheController.setCacheValue('/api/users/:id DELETE', [{ _id: perm._id.toString() }]);
   // end
 
   // User default

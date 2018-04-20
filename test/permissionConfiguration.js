@@ -81,11 +81,11 @@ const createData = async () => {
   await servPut.save();
   await servDel.save();
 
-  cacheController.setCacheValue('/api/permissions GET', [newPermission._id.toString()]);
-  cacheController.setCacheValue('/api/permissions/:id GET', [newPermission._id.toString()]);
-  cacheController.setCacheValue('/api/permissions/:id PUT', [newPermission._id.toString()]);
-  cacheController.setCacheValue('/api/permissions POST', [newPermission._id.toString()]);
-  cacheController.setCacheValue('/api/permissions/:id DELETE', [newPermission._id.toString()]);
+  cacheController.setCacheValue('/api/permissions GET', [{ _id: newPermission._id.toString() }]);
+  cacheController.setCacheValue('/api/permissions/:id GET', [{ _id: newPermission._id.toString() }]);
+  cacheController.setCacheValue('/api/permissions/:id PUT', [{ _id: newPermission._id.toString() }]);
+  cacheController.setCacheValue('/api/permissions POST', [{ _id: newPermission._id.toString() }]);
+  cacheController.setCacheValue('/api/permissions/:id DELETE', [{ _id: newPermission._id.toString() }]);
   // end
 
   // User default

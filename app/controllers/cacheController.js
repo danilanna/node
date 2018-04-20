@@ -1,5 +1,6 @@
 import redis from 'redis';
 import Promise from 'bluebird';
+import _ from 'lodash';
 import ServiceController from '../controllers/serviceController';
 import getConfigurations from '../../config/config';
 
@@ -18,9 +19,8 @@ export const setInitialCache = async () => {
       const services = await serviceController.find({}, true);
 
       services.forEach(async (val) => {
-        client.set(`${val.api} ${val.method}`, val.permissions.toString());
+        client.setAsync(`${val.api} ${val.method}`, val.permissions.toString());
       });
-
       success();
     });
 
@@ -31,7 +31,7 @@ export const setInitialCache = async () => {
 };
 
 export const deleteCacheValue = async (key) => {
-  await client.del(key.toString());
+  await client.delAsync(key.toString());
 };
 
 export const getCacheValue = async (val) => {
@@ -44,5 +44,5 @@ export const setCacheValue = async (key, val) => {
     await deleteCacheValue(key);
     return;
   }
-  await client.set(key.toString(), val.toString());
+  await client.setAsync(key.toString(), _.map(val, '_id').toString());
 };
