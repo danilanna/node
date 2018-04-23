@@ -22,7 +22,7 @@ export default class ServiceController extends GenericController {
 
   async update(id, body) {
     try {
-      const service = super.findById(id);
+      const service = await super.findById(id);
 
       const result = await Service.findByIdAndUpdate(id, {
         $set: body,
